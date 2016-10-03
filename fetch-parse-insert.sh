@@ -41,6 +41,20 @@ insert_data() {
     influx -execute "INSERT INTO euribor.week rates,maturity=${maturity} value=${rate} ${ts}"
 }
 
+populate_csv_files() {
+    maturity=$(short_maturity_string $1)
+    date=$(date_normalized $2)
+    rate=$3
+    file="euribor-rates-${maturity}.csv"
+    echo "append line' ${date},${rate}' to ${file}"
+    echo "${date},${rate}" >> ${file}
+}
+
+short_maturity_string() {
+    maturity=$1
+    echo "${maturity}" | tr -d '-' | grep -o -e "[0-9]\{1,2\}[wm]"
+}
+
 date_to_timestamp_nano() {
     date=$1
     year=$(echo ${date} | cut -d '-' -f3)
@@ -48,6 +62,14 @@ date_to_timestamp_nano() {
     day=$(echo ${date} | cut -d '-' -f2)
     time="12:00:00"
     date -d "${year}${month}${day} ${time}" -u +%s%N
+}
+
+date_normalized() {
+    date=$1
+    year=$(echo ${date} | cut -d '-' -f3)
+    month=$(echo ${date} | cut -d '-' -f1)
+    day=$(echo ${date} | cut -d '-' -f2)
+    echo "${year}-${month}-${day}"
 }
 
 rm -f /tmp/euribor*
@@ -70,4 +92,5 @@ do
         continue
     fi
     insert_data $maturity $date $rate
+    populate_csv_files $maturity $date $rate
 done
