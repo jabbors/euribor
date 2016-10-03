@@ -33,7 +33,7 @@ last_inserted_time() {
 }
 
 insert_data() {
-    maturity=$1
+    maturity=$(short_maturity_string $1)
     date=$2
     rate=$3
     ts=$(date_to_timestamp_nano ${date})
