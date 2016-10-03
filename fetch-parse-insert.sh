@@ -27,7 +27,7 @@ parse_rate() {
 }
 
 last_inserted_time() {
-    maturity=$1
+    maturity=$(short_maturity_string $1)
     ts=$(influx -format csv -execute "SELECT * FROM euribor.week.rates WHERE maturity='${maturity}' ORDER BY time DESC LIMIT 1" | tail -n 1 | cut -d ',' -f2)
     date -d @$(( ts / 1000000000 )) +%m-%d-%Y
 }
@@ -39,6 +39,7 @@ insert_data() {
     ts=$(date_to_timestamp_nano ${date})
     echo "inserting data: INSERT rates,maturity=${maturity} value=${rate} ${ts} (${date})"
     influx -execute "INSERT INTO euribor.week rates,maturity=${maturity} value=${rate} ${ts}"
+    influx -execute "INSERT INTO euribor.month rates,maturity=${maturity} value=${rate} ${ts}"
 }
 
 populate_csv_files() {
