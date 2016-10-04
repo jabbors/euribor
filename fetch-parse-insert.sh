@@ -92,6 +92,6 @@ do
         echo "data for ${date} already inserted"
         continue
     fi
-    insert_data $maturity $date $rate
-    populate_csv_files $maturity $date $rate
+    insert_data ${maturity} ${date} ${rate}
+    populate_csv_files ${maturity} ${date} ${rate}
 done
