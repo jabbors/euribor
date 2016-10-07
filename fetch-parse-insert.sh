@@ -46,7 +46,8 @@ populate_csv_files() {
     maturity=$(short_maturity_string $1)
     date=$(date_normalized $2)
     rate=$3
-    file="euribor-rates-${maturity}.csv"
+    dir=$(dirname $0)
+    file="${dir}/euribor-rates-${maturity}.csv"
     echo "append line' ${date},${rate}' to ${file}"
     echo "${date},${rate}" >> ${file}
 }
