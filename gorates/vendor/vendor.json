@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "xsNes3az9dn/yeaCVSbcbOOr9z8=",
+			"path": "github.com/julienschmidt/httprouter",
+			"revision": "9996d22d0add1f51cba971b2a99cc6587937d193",
+			"revisionTime": "2015-02-09T00:59:16Z"
+		}
+	],
+	"rootPath": "github.com/jabbors/gorates"
+}
