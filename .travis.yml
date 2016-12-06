@@ -1,0 +1,17 @@
+language: go
+
+install:
+  # Implicitly skip godep restore during install because
+  # we vendor our dependencies using godep by overriding
+  # install
+  - true
+
+go:
+- 1.6.2
+- 1.7.1
+- tip
+
+# Travis-CI does not build the binary by default -> do that!
+before_deploy: "go build"
+
+before_install: "cd gorates"
