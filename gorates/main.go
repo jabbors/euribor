@@ -79,6 +79,7 @@ func refreshCache() {
 			}
 			influxCache[retention] = cache
 		}
+		log.Println("cache refresh completed")
 
 		lastRefresh = time.Now()
 	}
