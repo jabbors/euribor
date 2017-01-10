@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,6 +37,7 @@ func (r *rate) MarshalJSON() ([]byte, error) {
 var lastRefresh time.Time
 var maturities = []string{"1w", "2w", "1m", "2m", "3m", "6m", "9m", "12m"}
 var retentions = []string{"week", "month", "three_months", "six_months", "year", "two_years", "six_years"}
+var historyPath string
 var historyCache map[string][]rate
 var influxCache map[string]map[string][]rate
 
@@ -54,7 +56,7 @@ func refreshCache() {
 		log.Println("refreshing history cache")
 		for _, maturity := range maturities {
 			// TODO: make path to files configureable
-			file := fmt.Sprintf("../euribor-rates-%s.csv", maturity)
+			file := fmt.Sprintf("%s/euribor-rates-%s.csv", historyPath, maturity)
 			historyCache[maturity] = parseFile(file)
 		}
 		log.Println("refreshing influx cache")
@@ -233,6 +235,9 @@ func errorMsg(msg string) string {
 }
 
 func main() {
+	flag.StringVar(&historyPath, "history-path", ".", "path to history rate CSV files")
+	flag.Parse()
+
 	go refreshCache()
 
 	router := httprouter.New()
