@@ -266,6 +266,13 @@ func history(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	fmt.Fprintf(w, string(jsonData))
 }
 
+// webapp handler
+func webapp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	url := baseURL(r)
+
+	fmt.Fprintf(w, renderWebapp(url))
+}
+
 func errorMsg(msg string) string {
 	return fmt.Sprintf("{\"error\":\"%s\"}", msg)
 }
@@ -288,6 +295,9 @@ func main() {
 
 	// routes to serve historical queries
 	router.GET("/rates/history/:year/:maturity", history)
+
+	// routes to serve the webapp
+	router.GET("/webapp", webapp)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
