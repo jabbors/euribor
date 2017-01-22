@@ -55,6 +55,14 @@ function loadData(maturity, name) {
 				selected: 4
 			},
 
+			navigator: {
+				enabled: false
+			},
+
+			scrollbar: {
+				enabled: false
+			},
+
             title: {
                 text: 'Euribor ' + name
             },
