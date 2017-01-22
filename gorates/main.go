@@ -17,6 +17,25 @@ import (
 
 const timeFormat = "2006-01-02"
 
+type rateSlice []rate
+
+func (rs rateSlice) Values() string {
+	str := "["
+	for i, r := range rs {
+		str += "["
+		str += strconv.FormatInt(r.Date.Unix()*1000, 10) // in milli seconds
+		str += ","
+		str += strconv.FormatFloat(r.Value, 'g', 4, 64)
+		str += "]"
+		if i != len(rs)-1 {
+			str += ","
+		}
+	}
+	str += "]"
+
+	return str
+}
+
 type rate struct {
 	Date  time.Time `json:"date"`
 	Value float64   `json:"value"`
@@ -192,6 +211,23 @@ func influx(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	fmt.Fprintf(w, string(jsonData))
 }
 
+// highstock handler
+func highstock(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	maturity := params.ByName("maturity")
+	if isValidMaturity(maturity) == false {
+		// TODO: return http error code
+		fmt.Fprintf(w, errorMsg("uknown maturity"))
+		return
+	}
+
+	rates := rateSlice{}
+	for _, r := range historyCache[maturity] {
+		rates = append(rates, r)
+	}
+
+	fmt.Fprintf(w, rates.Values())
+}
+
 // history handler
 func history(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
@@ -247,7 +283,8 @@ func main() {
 	router.GET("/", index)
 
 	// routes to serve the app
-	router.GET("/rates/app/:retention/:maturity", influx)
+	router.GET("/rates/app/if/:retention/:maturity", influx)
+	router.GET("/rates/app/hs/:maturity", highstock)
 
 	// routes to serve historical queries
 	router.GET("/rates/history/:year/:maturity", history)
