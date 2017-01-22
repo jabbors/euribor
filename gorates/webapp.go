@@ -20,8 +20,40 @@ function loadData(maturity, name) {
         Highcharts.stockChart('container', {
 
             rangeSelector: {
-                selected: 1
-            },
+				buttons: [{
+					type: 'week',
+					count: 1,
+					text: '1w'
+				}, {
+					type: 'month',
+					count: 1,
+					text: '1m'
+				}, {
+					type: 'month',
+					count: 3,
+					text: '3m'
+				}, {
+					type: 'month',
+					count: 6,
+					text: '6m'
+				}, {
+					type: 'year',
+					count: 1,
+					text: '1y'
+				}, {
+					type: 'year',
+					count: 2,
+					text: '2y'
+				}, {
+					type: 'year',
+					count: 6,
+					text: '6y'
+				}, {
+					type: 'all',
+					text: 'All'
+				}],
+				selected: 4
+			},
 
             title: {
                 text: 'Euribor ' + name
