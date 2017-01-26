@@ -15,11 +15,11 @@ const indexPage = `
 <body>
 <script>
 function loadData(maturity, name) {
-    $.getJSON('URLPLACEHOLDER/rates/app/hs/'+maturity, function (data) {
-        // Create the chart
-        Highcharts.stockChart('container', {
+	$.getJSON('URLPLACEHOLDER/rates/app/hs/'+maturity, function (data) {
+		// Create the chart
+		Highcharts.stockChart('container', {
 
-            rangeSelector: {
+			rangeSelector: {
 				buttons: [{
 					type: 'week',
 					count: 1,
@@ -63,19 +63,19 @@ function loadData(maturity, name) {
 				enabled: false
 			},
 
-            title: {
-                text: 'Euribor ' + name
-            },
+			title: {
+				text: 'Euribor ' + name
+			},
 
-            series: [{
-                name: maturity,
-                data: data,
-                tooltip: {
-                    valueDecimals: 3
-                }
-            }]
-        });
-    });
+			series: [{
+				name: maturity,
+				data: data,
+				tooltip: {
+					valueDecimals: 3
+				}
+			}]
+		});
+	});
 };
 
 window.onload=loadData('3m', '3 months');
