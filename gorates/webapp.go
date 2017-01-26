@@ -8,9 +8,13 @@ import (
 const indexPage = `
 <html>
 <head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Euribor rates</title>
 <script src="https://code.highcharts.com/stock/5.0.7/highstock.js"></script>
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 </head>
 <body>
 <script>
@@ -93,7 +97,7 @@ window.onload=loadChart('3m', '3 months');
 <option value="12m">12 months</option>
 </select>
 </div>
-<div id="container" style="height: 400px; min-width: 310px"></div>
+<div id="container"></div>
 </body>
 </html>`
 
