@@ -92,7 +92,7 @@ window.onload=loadChart('3m', '3 months');
 <option value="9m">9 months</option>
 <option value="12m">12 months</option>
 </select>
-<div>
+</div>
 <div id="container" style="height: 400px; min-width: 310px"></div>
 </body>
 </html>`
