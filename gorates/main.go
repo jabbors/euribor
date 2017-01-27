@@ -178,11 +178,13 @@ func isValidMaturity(m string) bool {
 
 // index handler
 func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	log.Printf("%v /", r.RemoteAddr)
 	fmt.Fprint(w, "Welcome to the Euribor rates service!\n")
 }
 
 // influx handler
 func influx(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	log.Printf("%v /rates/app/%s/%s", r.RemoteAddr, params.ByName("retention"), params.ByName("maturity"))
 	retention := params.ByName("retention")
 	if isValidRetention(retention) == false {
 		//TODO: return http error code
@@ -213,6 +215,7 @@ func influx(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
 // highstock handler
 func highstock(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	log.Printf("%v /rates/app/hs/%s", r.RemoteAddr, params.ByName("maturity"))
 	maturity := params.ByName("maturity")
 	if isValidMaturity(maturity) == false {
 		// TODO: return http error code
@@ -230,7 +233,7 @@ func highstock(w http.ResponseWriter, r *http.Request, params httprouter.Params)
 
 // history handler
 func history(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-
+	log.Printf("%v /rates/history/%s/%s", r.RemoteAddr, params.ByName("year"), params.ByName("maturity"))
 	year, err := strconv.ParseInt(params.ByName("year"), 10, 32)
 	if err != nil {
 		// TODO: return http error code
@@ -268,6 +271,7 @@ func history(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 
 // webapp handler
 func webapp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	log.Printf("%v /webapp", r.RemoteAddr)
 	url := baseURL(r)
 
 	fmt.Fprintf(w, renderWebapp(url))
