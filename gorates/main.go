@@ -292,6 +292,7 @@ func main() {
 	go refreshCache()
 
 	router := httprouter.New()
+	router.RedirectTrailingSlash = true
 
 	// routes for general info
 	// TODO: add routes for list of supported retentions/maturities
