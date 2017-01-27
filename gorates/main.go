@@ -278,6 +278,10 @@ func errorMsg(msg string) string {
 }
 
 func main() {
+	var host string
+	var port string
+	flag.StringVar(&host, "host", "localhost", "host to bind to")
+	flag.StringVar(&port, "port", "8080", "port to bind to")
 	flag.StringVar(&historyPath, "history-path", ".", "path to history rate CSV files")
 	flag.Parse()
 
@@ -299,5 +303,6 @@ func main() {
 	// routes to serve the webapp
 	router.GET("/webapp", webapp)
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Printf("listening on %s:%s", host, port)
+	log.Fatal(http.ListenAndServe(host+":"+port, router))
 }
