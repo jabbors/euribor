@@ -15,6 +15,16 @@ const indexPage = `
 <script src="https://code.highcharts.com/stock/5.0.7/highstock.js"></script>
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="apple-touch-icon" sizes="57x57" href="https://github.com/jabbors/euribor/raw/master/gorates/chart-icon-57x57.png" />
+<link rel="apple-touch-icon" sizes="72x72" href="https://github.com/jabbors/euribor/raw/master/gorates/chart-icon-72x72.png" />
+<link rel="apple-touch-icon" sizes="114x114" href="https://github.com/jabbors/euribor/raw/master/gorates/chart-icon-114x114.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="https://github.com/jabbors/euribor/raw/master/gorates/chart-icon-144x144.png" />
+<style>
+.icon-license {
+  font-size: 1rem;
+  font-style: italic;
+}
+</style>
 </head>
 <body>
 <script>
@@ -98,6 +108,9 @@ window.onload=loadChart('3m', '3 months');
 </select>
 </div>
 <div id="container"></div>
+<div class="icon-license">
+Icons made by <a href="http://www.flaticon.com/authors/gregor-cresnar" title="Gregor Cresnar">Gregor Cresnar</a> from <a href="http://www.flaticon.com" title="Flaticon">www.flaticon.com</a> is licensed by <a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>
+</div>
 </body>
 </html>`
 
