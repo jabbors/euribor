@@ -1,7 +1,6 @@
 package main
 
 import (
-	"net/http"
 	"strings"
 )
 
@@ -114,16 +113,6 @@ Icons made by <a href="http://www.flaticon.com/authors/gregor-cresnar" title="Gr
 </body>
 </html>`
 
-func renderWebapp(baseURL string) string {
-	return strings.Replace(indexPage, "URLPLACEHOLDER", baseURL, -1)
-}
-
-func baseURL(r *http.Request, webRoot string) string {
-	protocol := "https"
-	if r.TLS == nil {
-		protocol = "http"
-	}
-	path := strings.Replace(strings.Replace(r.RequestURI, "/webapp/", "", -1), "/webapp", "", -1)
-
-	return protocol + "://" + r.Host + webRoot + path
+func renderWebapp(webRoot string) string {
+	return strings.Replace(indexPage, "URLPLACEHOLDER", webRoot, -1)
 }

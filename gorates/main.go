@@ -273,9 +273,8 @@ func history(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 // webapp handler
 func webapp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	log.Printf("%v /webapp", r.RemoteAddr)
-	url := baseURL(r, webRoot)
 
-	fmt.Fprintf(w, renderWebapp(url))
+	fmt.Fprintf(w, renderWebapp(webRoot))
 }
 
 func errorMsg(msg string) string {
