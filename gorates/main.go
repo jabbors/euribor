@@ -56,6 +56,7 @@ func (r *rate) MarshalJSON() ([]byte, error) {
 var lastRefresh time.Time
 var maturities = []string{"1w", "2w", "1m", "2m", "3m", "6m", "9m", "12m"}
 var retentions = []string{"week", "month", "three_months", "six_months", "year", "two_years", "six_years"}
+var webRoot string
 var historyPath string
 var historyCache map[string][]rate
 var influxCache map[string]map[string][]rate
@@ -272,7 +273,7 @@ func history(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 // webapp handler
 func webapp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	log.Printf("%v /webapp", r.RemoteAddr)
-	url := baseURL(r)
+	url := baseURL(r, webRoot)
 
 	fmt.Fprintf(w, renderWebapp(url))
 }
@@ -286,6 +287,7 @@ func main() {
 	var port string
 	flag.StringVar(&host, "host", "localhost", "host to bind to")
 	flag.StringVar(&port, "port", "8080", "port to bind to")
+	flag.StringVar(&webRoot, "web-root", "", "root path if hosted behind a proxy")
 	flag.StringVar(&historyPath, "history-path", ".", "path to history rate CSV files")
 	flag.Parse()
 

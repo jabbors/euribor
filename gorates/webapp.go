@@ -118,12 +118,12 @@ func renderWebapp(baseURL string) string {
 	return strings.Replace(indexPage, "URLPLACEHOLDER", baseURL, -1)
 }
 
-func baseURL(r *http.Request) string {
+func baseURL(r *http.Request, webRoot string) string {
 	protocol := "https"
 	if r.TLS == nil {
 		protocol = "http"
 	}
 	path := strings.Replace(strings.Replace(r.RequestURI, "/webapp/", "", -1), "/webapp", "", -1)
 
-	return protocol + "://" + r.Host + path
+	return protocol + "://" + r.Host + webRoot + path
 }
