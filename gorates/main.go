@@ -56,6 +56,15 @@ func (r *rate) MarshalJSON() ([]byte, error) {
 var lastRefresh time.Time
 var maturities = []string{"1w", "2w", "1m", "2m", "3m", "6m", "9m", "12m"}
 var retentions = []string{"week", "month", "three_months", "six_months", "year", "two_years", "six_years"}
+var retentionMap = map[string]string{
+	"last-week":       "week",
+	"last-month":      "month",
+	"last-quarter":    "three_months",
+	"last-six-months": "six_months",
+	"last-year":       "year",
+	"last-two-years":  "two_years",
+	"last-six-years":  "six_years",
+}
 var webRoot string
 var historyPath string
 var historyCache map[string][]rate
@@ -143,15 +152,9 @@ func parseFile(file string) []rate {
 }
 
 func isValidRetention(r string) bool {
-	// TODO: fix some kind of mapping
-	// last-week
-	// last-month
-	// last-quater
-	// last-six-months
-	// last-year
-	// last-two-years
-	// last-six-years
-
+	if _, ok := retentionMap[r]; ok {
+		return true
+	}
 	return false
 }
 
@@ -201,7 +204,7 @@ func influx(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	}
 
 	rates := []rate{}
-	for _, r := range influxCache[retention][maturity] {
+	for _, r := range influxCache[retentionMap[retention]][maturity] {
 		rates = append(rates, r)
 	}
 
