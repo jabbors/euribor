@@ -10,7 +10,7 @@ go:
 
 gobuild_args: -x -ldflags "-X main.version=$TRAVIS_TAG"
 
-before_deploy: go build
+before_deploy: go build -x -ldflags "-X main.version=$TRAVIS_TAG"
 before_install: cd gorates
 deploy:
   skip_cleanup: true
