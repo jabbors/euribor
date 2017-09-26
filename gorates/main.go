@@ -15,7 +15,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-const timeFormat = "2006-01-02"
+const (
+	appName    = "gorates"
+	timeFormat = "2006-01-02"
+)
+
+var version string
 
 type rateSlice []rate
 
@@ -56,6 +61,15 @@ func (r *rate) MarshalJSON() ([]byte, error) {
 var lastRefresh time.Time
 var maturities = []string{"1w", "2w", "1m", "2m", "3m", "6m", "9m", "12m"}
 var retentions = []string{"week", "month", "three_months", "six_months", "year", "two_years", "six_years"}
+var retentionMap = map[string]string{
+	"last-week":       "week",
+	"last-month":      "month",
+	"last-quarter":    "three_months",
+	"last-six-months": "six_months",
+	"last-year":       "year",
+	"last-two-years":  "two_years",
+	"last-six-years":  "six_years",
+}
 var webRoot string
 var historyPath string
 var historyCache map[string][]rate
@@ -143,15 +157,9 @@ func parseFile(file string) []rate {
 }
 
 func isValidRetention(r string) bool {
-	// TODO: fix some kind of mapping
-	// last-week
-	// last-month
-	// last-quater
-	// last-six-months
-	// last-year
-	// last-two-years
-	// last-six-years
-
+	if _, ok := retentionMap[r]; ok {
+		return true
+	}
 	return false
 }
 
@@ -177,118 +185,21 @@ func isValidMaturity(m string) bool {
 	return false
 }
 
-// index handler
-func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	log.Printf("%v /", r.RemoteAddr)
-	fmt.Fprint(w, "Welcome to the Euribor rates service!\n")
-}
-
-// influx handler
-func influx(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	log.Printf("%v /rates/app/%s/%s", r.RemoteAddr, params.ByName("retention"), params.ByName("maturity"))
-	retention := params.ByName("retention")
-	if isValidRetention(retention) == false {
-		//TODO: return http error code
-		fmt.Fprintf(w, errorMsg("uknown retention"))
-		return
-	}
-
-	maturity := params.ByName("maturity")
-	if isValidMaturity(maturity) == false {
-		// TODO: return http error code
-		fmt.Fprintf(w, errorMsg("uknown maturity"))
-		return
-	}
-
-	rates := []rate{}
-	for _, r := range influxCache[retention][maturity] {
-		rates = append(rates, r)
-	}
-
-	jsonData, err := json.Marshal(rates)
-	if err != nil {
-		fmt.Fprintf(w, errorMsg(err.Error()))
-		return
-	}
-
-	fmt.Fprintf(w, string(jsonData))
-}
-
-// highstock handler
-func highstock(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	log.Printf("%v /rates/app/hs/%s", r.RemoteAddr, params.ByName("maturity"))
-	maturity := params.ByName("maturity")
-	if isValidMaturity(maturity) == false {
-		// TODO: return http error code
-		fmt.Fprintf(w, errorMsg("uknown maturity"))
-		return
-	}
-
-	rates := rateSlice{}
-	for _, r := range historyCache[maturity] {
-		rates = append(rates, r)
-	}
-
-	fmt.Fprintf(w, rates.Values())
-}
-
-// history handler
-func history(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	log.Printf("%v /rates/history/%s/%s", r.RemoteAddr, params.ByName("year"), params.ByName("maturity"))
-	year, err := strconv.ParseInt(params.ByName("year"), 10, 32)
-	if err != nil {
-		// TODO: return http error code
-		fmt.Fprint(w, errorMsg(err.Error()))
-		return
-	}
-	if year < 2010 || year > int64(time.Now().Year()) {
-		fmt.Fprintf(w, errorMsg("no data"))
-		return
-	}
-
-	maturity := params.ByName("maturity")
-	if isValidMaturity(maturity) == false {
-		// TODO: return http error code
-		fmt.Fprintf(w, errorMsg("uknown maturity"))
-		return
-	}
-
-	rates := []rate{}
-	for _, r := range historyCache[maturity] {
-		if int64(r.Date.Year()) != year {
-			continue
-		}
-		rates = append(rates, r)
-	}
-
-	jsonData, err := json.Marshal(rates)
-	if err != nil {
-		fmt.Fprintf(w, errorMsg(err.Error()))
-		return
-	}
-
-	fmt.Fprintf(w, string(jsonData))
-}
-
-// webapp handler
-func webapp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	log.Printf("%v /webapp", r.RemoteAddr)
-
-	fmt.Fprintf(w, renderWebapp(webRoot))
-}
-
-func errorMsg(msg string) string {
-	return fmt.Sprintf("{\"error\":\"%s\"}", msg)
-}
-
 func main() {
 	var host string
 	var port string
+	var verFlag bool
 	flag.StringVar(&host, "host", "localhost", "host to bind to")
 	flag.StringVar(&port, "port", "8080", "port to bind to")
 	flag.StringVar(&webRoot, "web-root", "", "root path if hosted behind a proxy")
 	flag.StringVar(&historyPath, "history-path", ".", "path to history rate CSV files")
+	flag.BoolVar(&verFlag, "version", false, "print version and exit")
 	flag.Parse()
+
+	if verFlag {
+		fmt.Printf("gorates: version=%s\n", version)
+		return
+	}
 
 	go refreshCache()
 
@@ -297,17 +208,18 @@ func main() {
 
 	// routes for general info
 	// TODO: add routes for list of supported retentions/maturities
-	router.GET("/", index)
+	router.GET("/", NoAuthHandler(indexHandler))
+	router.GET("/version", NoAuthHandler(versionHandler))
 
 	// routes to serve the app
-	router.GET("/rates/app/if/:retention/:maturity", influx)
-	router.GET("/rates/app/hs/:maturity", highstock)
+	router.GET("/rates/app/if/:retention/:maturity", NoAuthHandler(influxHandler))
+	router.GET("/rates/app/hs/:maturity", NoAuthHandler(highstockHandler))
 
 	// routes to serve historical queries
-	router.GET("/rates/history/:year/:maturity", history)
+	router.GET("/rates/history/:year/:maturity", NoAuthHandler(historyHandler))
 
 	// routes to serve the webapp
-	router.GET("/webapp", webapp)
+	router.GET("/webapp", NoAuthHandler(webappHandler))
 
 	log.Printf("listening on %s:%s", host, port)
 	log.Fatal(http.ListenAndServe(host+":"+port, router))
