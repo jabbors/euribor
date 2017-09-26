@@ -8,6 +8,8 @@ go:
 - 1.7.1
 - tip
 
+gobuild_args: -x -ldflags "-X main.version=$TRAVIS_TAG"
+
 before_deploy: go build
 before_install: cd gorates
 deploy:
