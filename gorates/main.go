@@ -185,116 +185,6 @@ func isValidMaturity(m string) bool {
 	return false
 }
 
-// index handler
-func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	log.Printf("%v /", r.RemoteAddr)
-	fmt.Fprint(w, "Welcome to the Euribor rates service!\n")
-}
-
-// version handler
-func versionHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	log.Printf("%v /version", r.RemoteAddr)
-	fmt.Fprintf(w, "{\"version\":\"%s\"}", version)
-}
-
-// influx handler
-func influx(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	log.Printf("%v /rates/app/%s/%s", r.RemoteAddr, params.ByName("retention"), params.ByName("maturity"))
-	retention := params.ByName("retention")
-	if isValidRetention(retention) == false {
-		//TODO: return http error code
-		fmt.Fprintf(w, errorMsg("uknown retention"))
-		return
-	}
-
-	maturity := params.ByName("maturity")
-	if isValidMaturity(maturity) == false {
-		// TODO: return http error code
-		fmt.Fprintf(w, errorMsg("uknown maturity"))
-		return
-	}
-
-	rates := []rate{}
-	for _, r := range influxCache[retentionMap[retention]][maturity] {
-		rates = append(rates, r)
-	}
-
-	jsonData, err := json.Marshal(rates)
-	if err != nil {
-		fmt.Fprintf(w, errorMsg(err.Error()))
-		return
-	}
-
-	fmt.Fprintf(w, string(jsonData))
-}
-
-// highstock handler
-func highstock(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	log.Printf("%v /rates/app/hs/%s", r.RemoteAddr, params.ByName("maturity"))
-	maturity := params.ByName("maturity")
-	if isValidMaturity(maturity) == false {
-		// TODO: return http error code
-		fmt.Fprintf(w, errorMsg("uknown maturity"))
-		return
-	}
-
-	rates := rateSlice{}
-	for _, r := range historyCache[maturity] {
-		rates = append(rates, r)
-	}
-
-	fmt.Fprintf(w, rates.Values())
-}
-
-// history handler
-func history(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	log.Printf("%v /rates/history/%s/%s", r.RemoteAddr, params.ByName("year"), params.ByName("maturity"))
-	year, err := strconv.ParseInt(params.ByName("year"), 10, 32)
-	if err != nil {
-		// TODO: return http error code
-		fmt.Fprint(w, errorMsg(err.Error()))
-		return
-	}
-	if year < 2010 || year > int64(time.Now().Year()) {
-		fmt.Fprintf(w, errorMsg("no data"))
-		return
-	}
-
-	maturity := params.ByName("maturity")
-	if isValidMaturity(maturity) == false {
-		// TODO: return http error code
-		fmt.Fprintf(w, errorMsg("uknown maturity"))
-		return
-	}
-
-	rates := []rate{}
-	for _, r := range historyCache[maturity] {
-		if int64(r.Date.Year()) != year {
-			continue
-		}
-		rates = append(rates, r)
-	}
-
-	jsonData, err := json.Marshal(rates)
-	if err != nil {
-		fmt.Fprintf(w, errorMsg(err.Error()))
-		return
-	}
-
-	fmt.Fprintf(w, string(jsonData))
-}
-
-// webapp handler
-func webapp(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	log.Printf("%v /webapp", r.RemoteAddr)
-
-	fmt.Fprintf(w, renderWebapp(webRoot))
-}
-
-func errorMsg(msg string) string {
-	return fmt.Sprintf("{\"error\":\"%s\"}", msg)
-}
-
 func main() {
 	var host string
 	var port string
@@ -318,18 +208,18 @@ func main() {
 
 	// routes for general info
 	// TODO: add routes for list of supported retentions/maturities
-	router.GET("/", index)
-	router.GET("/version", versionHandler)
+	router.GET("/", NoAuthHandler(indexHandler))
+	router.GET("/version", NoAuthHandler(versionHandler))
 
 	// routes to serve the app
-	router.GET("/rates/app/if/:retention/:maturity", influx)
-	router.GET("/rates/app/hs/:maturity", highstock)
+	router.GET("/rates/app/if/:retention/:maturity", NoAuthHandler(influxHandler))
+	router.GET("/rates/app/hs/:maturity", NoAuthHandler(highstockHandler))
 
 	// routes to serve historical queries
-	router.GET("/rates/history/:year/:maturity", history)
+	router.GET("/rates/history/:year/:maturity", NoAuthHandler(historyHandler))
 
 	// routes to serve the webapp
-	router.GET("/webapp", webapp)
+	router.GET("/webapp", NoAuthHandler(webappHandler))
 
 	log.Printf("listening on %s:%s", host, port)
 	log.Fatal(http.ListenAndServe(host+":"+port, router))
