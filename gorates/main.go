@@ -15,7 +15,12 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-const timeFormat = "2006-01-02"
+const (
+	appName    = "gorates"
+	timeFormat = "2006-01-02"
+)
+
+var version string
 
 type rateSlice []rate
 
@@ -186,6 +191,12 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprint(w, "Welcome to the Euribor rates service!\n")
 }
 
+// version handler
+func versionHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	log.Printf("%v /version", r.RemoteAddr)
+	fmt.Fprintf(w, "{\"version\":\"%s\"}", version)
+}
+
 // influx handler
 func influx(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	log.Printf("%v /rates/app/%s/%s", r.RemoteAddr, params.ByName("retention"), params.ByName("maturity"))
@@ -287,11 +298,18 @@ func errorMsg(msg string) string {
 func main() {
 	var host string
 	var port string
+	var verFlag bool
 	flag.StringVar(&host, "host", "localhost", "host to bind to")
 	flag.StringVar(&port, "port", "8080", "port to bind to")
 	flag.StringVar(&webRoot, "web-root", "", "root path if hosted behind a proxy")
 	flag.StringVar(&historyPath, "history-path", ".", "path to history rate CSV files")
+	flag.BoolVar(&verFlag, "version", false, "print version and exit")
 	flag.Parse()
+
+	if verFlag {
+		fmt.Printf("gorates: version=%s\n", version)
+		return
+	}
 
 	go refreshCache()
 
@@ -301,6 +319,7 @@ func main() {
 	// routes for general info
 	// TODO: add routes for list of supported retentions/maturities
 	router.GET("/", index)
+	router.GET("/version", versionHandler)
 
 	// routes to serve the app
 	router.GET("/rates/app/if/:retention/:maturity", influx)
