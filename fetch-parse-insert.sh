@@ -75,6 +75,7 @@ date_normalized() {
 }
 
 rm -f /tmp/euribor*
+summaries=()
 # As of November 1st 2013 the number of Euribor rates was reduced to 8 (1-2 weeks, 1, 2, 3, 6, 9 and 12 months).
 for maturity in 1-week 2-weeks 1-month 2-months 3-months 6-months 9-months 12-months
 do
@@ -83,6 +84,7 @@ do
     date=$(parse_date ${maturity})
     if [ ${#date} -ne 10 ]
     then
+        summaries+=("rate ${maturity} skipped" "no date found, something might be wrong")
         echo "no date found, something might be wrong"
         continue
     fi
@@ -90,9 +92,15 @@ do
     last_inserted=$(last_inserted_time ${maturity})
     if [ "${last_inserted}" == "${date}" ]
     then
+        summaries+=("rate ${maturity} ignored, data for ${date} already inserted")
         echo "data for ${date} already inserted"
         continue
     fi
     insert_data ${maturity} ${date} ${rate}
     populate_csv_files ${maturity} ${date} ${rate}
+    summaries+=("inserted rate ${maturity} for ${date}")
 done
+
+title="gorates pull at $(date)"
+summary=$(IFS=$'\n' eval 'echo "${summaries[*]}"')
+notify_pushbullet "$title" "$summary"
