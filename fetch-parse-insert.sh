@@ -1,5 +1,15 @@
 #!/bin/bash
 
+PUSHBULLET_TOKEN=""
+notify_pushbullet() {
+    title=$1
+    body=$2
+    if [ -n "$PUSHBULLET_TOKEN" ]
+    then
+        curl --header "Authorization: Bearer ${PUSHBULLET_TOKEN}" -X POST https://api.pushbullet.com/v2/pushes --header "Content-Type: application/json" --data-binary "{\"type\": \"note\", \"title\": \"${title}\", \"body\": \"${body}\"}"
+    fi
+}
+
 fetch_page() {
     maturity=$1
     page="/euribor-rate-${maturity}.asp"
