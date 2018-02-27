@@ -108,9 +108,9 @@ do
     fi
     insert_data ${maturity} ${date} ${rate}
     populate_csv_files ${maturity} ${date} ${rate}
-    summaries+=("inserted rate ${maturity} for ${date}")
+    summaries+=("inserted rate ${maturity}")
 done
 
 title="gorates pull at ${date}"
-summary=$(IFS=: eval 'echo "${summaries[*]}"' | sed "s/:/\\\n/")
+summary=$(IFS=: eval 'echo "${summaries[*]}"' | sed "s/:/\\\n/g")
 notify_pushbullet "$title" "$summary"
