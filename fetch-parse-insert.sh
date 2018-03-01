@@ -111,6 +111,7 @@ do
     summaries+=("inserted rate ${maturity}")
 done
 
-title="gorates pull at ${date}"
+now=$(date -R)
+title="gorates pull at ${now} for ${date}"
 summary=$(IFS=: eval 'echo "${summaries[*]}"' | sed "s/:/\\\n/g")
 notify_pushbullet "$title" "$summary"
