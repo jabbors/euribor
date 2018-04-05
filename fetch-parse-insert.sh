@@ -112,6 +112,7 @@ do
 done
 
 now=$(date -R)
-title="gorates pull at ${now} for ${date}"
+yesterday=$(date --date="yesterday" +%Y-%m-%d)
+title="gorates pull at ${now} for ${yesterday}"
 summary=$(IFS=: eval 'echo "${summaries[*]}"' | sed "s/:/\\\n/g")
 notify_pushbullet "$title" "$summary"
