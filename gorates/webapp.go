@@ -34,10 +34,6 @@ function loadChart(maturity, name) {
 
 			rangeSelector: {
 				buttons: [{
-					type: 'week',
-					count: 1,
-					text: '1w'
-				}, {
 					type: 'month',
 					count: 1,
 					text: '1m'
@@ -55,8 +51,8 @@ function loadChart(maturity, name) {
 					text: '1y'
 				}, {
 					type: 'year',
-					count: 2,
-					text: '2y'
+					count: 3,
+					text: '3y'
 				}, {
 					type: 'year',
 					count: 6,
@@ -65,7 +61,7 @@ function loadChart(maturity, name) {
 					type: 'all',
 					text: 'All'
 				}],
-				selected: 4
+				selected: 3
 			},
 
 			navigator: {
