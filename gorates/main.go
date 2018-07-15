@@ -202,6 +202,7 @@ func main() {
 	}
 
 	go refreshCache()
+	go monitorRates()
 
 	router := httprouter.New()
 	router.RedirectTrailingSlash = true
