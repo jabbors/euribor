@@ -217,8 +217,8 @@ func alertAddHandler(r *http.Request, params httprouter.Params) (string, int, er
 		return "", http.StatusBadRequest, errInvalidLimit
 	}
 
-	threshold := newThreshold(email, limit, maturity)
-	err = addThreshold(threshold)
+	th := newThreshold(email, limit, maturity)
+	err = th.Add()
 	if err != nil {
 		return "", http.StatusInternalServerError, err
 	}
@@ -238,8 +238,8 @@ func alertRemoveHandler(r *http.Request, params httprouter.Params) (string, int,
 		return "", http.StatusBadRequest, errInvalidLimit
 	}
 
-	threshold := newThreshold(email, limit, maturity)
-	err = removeThreshold(threshold)
+	th := newThreshold(email, limit, maturity)
+	err = th.Remove()
 	if err != nil {
 		return "", http.StatusInternalServerError, err
 	}

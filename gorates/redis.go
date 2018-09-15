@@ -56,25 +56,6 @@ func checkConnection(cli *redis.Client) (*redis.Client, error) {
 	return cli, nil
 }
 
-func addThreshold(th threshold) error {
-	client, err := getConnection()
-	if err != nil {
-		fmt.Println("error: failed connecting to redis:", err)
-		return err
-	}
-	return cacheValue(client, th.Key(), th.Limit)
-}
-
-func removeThreshold(th threshold) error {
-	client, err := getConnection()
-	if err != nil {
-		fmt.Println("error: failed connecting to redis:", err)
-		return err
-	}
-	err = client.Del(th.Key()).Err()
-	return err
-}
-
 func loadThresholds(email string) []threshold {
 	client, err := getConnection()
 	if err != nil {
@@ -117,9 +98,4 @@ func lookupValue(client *redis.Client, key string) (float64, error) {
 		return 0, err
 	}
 	return val, nil
-}
-
-func cacheValue(client *redis.Client, key string, value float64) error {
-	err := client.Set(key, value, 0).Err()
-	return err
 }
