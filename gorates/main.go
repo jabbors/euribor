@@ -16,48 +16,8 @@ const (
 
 var version string
 
-var maturities = []string{"1w", "2w", "1m", "2m", "3m", "6m", "9m", "12m"}
-var retentions = []string{"week", "month", "three_months", "six_months", "year", "two_years", "six_years"}
-var retentionMap = map[string]string{
-	"last-week":       "week",
-	"last-month":      "month",
-	"last-quarter":    "three_months",
-	"last-six-months": "six_months",
-	"last-year":       "year",
-	"last-two-years":  "two_years",
-	"last-six-years":  "six_years",
-}
 var webRoot string
 var historyPath string
-
-func isValidRetention(r string) bool {
-	if _, ok := retentionMap[r]; ok {
-		return true
-	}
-	return false
-}
-
-func isValidMaturity(m string) bool {
-	switch m {
-	case "1w":
-		return true
-	case "2w":
-		return true
-	case "1m":
-		return true
-	case "2m":
-		return true
-	case "3m":
-		return true
-	case "6m":
-		return true
-	case "9m":
-		return true
-	case "12m":
-		return true
-	}
-	return false
-}
 
 func main() {
 	var host string
