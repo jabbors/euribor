@@ -14,10 +14,11 @@ const (
 	timeFormat = "2006-01-02"
 )
 
-var version string
-
-var webRoot string
-var historyPath string
+var (
+	version     string
+	webRoot     string
+	historyPath string
+)
 
 func main() {
 	var host string
