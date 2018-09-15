@@ -18,6 +18,10 @@ func (t threshold) Key() string {
 	return fmt.Sprintf("gorates_%s;%s", t.Email, t.Maturity)
 }
 
+func newThreshold(email string, limit float64, maturity string) threshold {
+	return threshold{Email: email, Limit: limit, Maturity: maturity}
+}
+
 func newThresholdFromKeyVal(key string, value float64) (threshold, error) {
 	key = strings.TrimLeft(key, "gorates_")
 	parts := strings.Split(key, ";")
@@ -37,17 +41,18 @@ func monitorRates() {
 			continue
 		}
 
-		fmt.Println("loading rates from files")
+		log.Println("[monitor]: loading rates from files")
 		for _, maturity := range maturities {
 			// TODO: make path to files configureable
 			file := fmt.Sprintf("%s/euribor-rates-%s.csv", historyPath, maturity)
 			historyRates[maturity] = parseFile(file)
 		}
 
-		log.Println("loading thresholds from redis")
-		thresholds := loadThresholds()
+		log.Println("[monitor]: loading thresholds from redis")
+		filter := ""
+		thresholds := loadThresholds(filter)
 
-		fmt.Println("monitoring rates...")
+		log.Println("[monitor]: monitoring rates...")
 		for _, th := range thresholds {
 			if th.Triggerd {
 				continue
@@ -56,15 +61,16 @@ func monitorRates() {
 			if thresholdExceeded(th.Limit, historyRates[th.Maturity]) {
 				err := sendThresholdAlert(th)
 				if err != nil {
-					fmt.Printf("error: failed sending alert for threshold %s: %v\n", th.Key(), err)
+					fmt.Printf("[monitor]: error: failed sending alert for threshold %s: %v\n", th.Key(), err)
 					continue
 				}
-				err = markThresholdAsTriggered(th)
+				err = removeThreshold(th)
 				if err != nil {
-					fmt.Printf("error: failed marking threshold %s as triggered: %v\n", th.Key(), err)
+					fmt.Printf("[monitor]: error: failed removing threshold %s: %v\n", th.Key(), err)
 				}
 			}
 		}
+		log.Println("[monitor]: monitoring completed")
 	}
 }
 

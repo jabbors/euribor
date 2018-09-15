@@ -56,7 +56,16 @@ func checkConnection(cli *redis.Client) (*redis.Client, error) {
 	return cli, nil
 }
 
-func markThresholdAsTriggered(th threshold) error {
+func addThreshold(th threshold) error {
+	client, err := getConnection()
+	if err != nil {
+		fmt.Println("error: failed connecting to redis:", err)
+		return err
+	}
+	return cacheValue(client, th.Key(), th.Limit)
+}
+
+func removeThreshold(th threshold) error {
 	client, err := getConnection()
 	if err != nil {
 		fmt.Println("error: failed connecting to redis:", err)
@@ -66,7 +75,7 @@ func markThresholdAsTriggered(th threshold) error {
 	return err
 }
 
-func loadThresholds() []threshold {
+func loadThresholds(email string) []threshold {
 	client, err := getConnection()
 	if err != nil {
 		fmt.Println("error: failed connecting to redis:", err)
@@ -91,7 +100,13 @@ func loadThresholds() []threshold {
 			fmt.Printf("error: creating threshold from key '%s' and value '%v': %v\n", key, value, err)
 			continue
 		}
-		thresholds = append(thresholds, threshold)
+		if email != "" {
+			if threshold.Email == email {
+				thresholds = append(thresholds, threshold)
+			}
+		} else {
+			thresholds = append(thresholds, threshold)
+		}
 	}
 	return thresholds
 }

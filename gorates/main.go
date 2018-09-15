@@ -87,13 +87,13 @@ func refreshCache() {
 		}
 
 		// refresh
-		log.Println("refreshing history cache")
+		log.Println("[cache]: refreshing history cache")
 		for _, maturity := range maturities {
 			// TODO: make path to files configureable
 			file := fmt.Sprintf("%s/euribor-rates-%s.csv", historyPath, maturity)
 			historyCache[maturity] = parseFile(file)
 		}
-		log.Println("refreshing influx cache")
+		log.Println("[cache]: refreshing influx cache")
 		for _, retention := range retentions {
 			results := queryInflux(retention)
 			cache := make(map[string][]rate)
@@ -103,7 +103,7 @@ func refreshCache() {
 				// fmt.Println(value, reflect.TypeOf(value).Kind(), reflect.TypeOf(value))
 				m, r, err := transformInfluxValueToRate(reflect.ValueOf(value).Interface().([]interface{}))
 				if err != nil {
-					log.Println("error converting influx value to rate")
+					log.Println("[cache]: error converting influx value to rate")
 					continue
 				}
 				if rates, ok := cache[m]; ok {
@@ -115,7 +115,7 @@ func refreshCache() {
 			}
 			influxCache[retention] = cache
 		}
-		log.Println("cache refresh completed")
+		log.Println("[cache]: refresh completed")
 
 		lastRefresh = time.Now()
 	}
@@ -221,6 +221,11 @@ func main() {
 
 	// routes to serve the webapp
 	router.GET("/webapp", NoAuthHandler(webappHandler))
+
+	// routes to manage alerts
+	router.PUT("/alert/:email/:maturity/:limit", NoAuthHandler(alertAddHandler))
+	router.DELETE("/alert/:email/:maturity/:limit", NoAuthHandler(alertRemoveHandler))
+	router.GET("/alert/:email", NoAuthHandler(alertListHandler))
 
 	log.Printf("listening on %s:%s", host, port)
 	log.Fatal(http.ListenAndServe(host+":"+port, router))

@@ -23,6 +23,7 @@ var (
 	errUnknownMaturity  = errors.New("unknown maturity")
 	errMarshalError     = errors.New("marhshal failed")
 	errInvalidYear      = errors.New("invalid year")
+	errInvalidLimit     = errors.New("invalid alert limit")
 	errOutOfRange       = errors.New("time is out of range")
 )
 
@@ -202,4 +203,60 @@ func historyHandler(r *http.Request, params httprouter.Params) (string, int, err
 // webapp handler
 func webappHandler(r *http.Request, params httprouter.Params) (string, int, error) {
 	return renderWebapp(webRoot), http.StatusOK, nil
+}
+
+func alertAddHandler(r *http.Request, params httprouter.Params) (string, int, error) {
+	email := params.ByName("email")
+	// TODO: validate email
+	maturity := params.ByName("maturity")
+	if isValidMaturity(maturity) == false {
+		return "", http.StatusBadRequest, errUnknownMaturity
+	}
+	limit, err := strconv.ParseFloat(params.ByName("limit"), 64)
+	if err != nil {
+		return "", http.StatusBadRequest, errInvalidLimit
+	}
+
+	threshold := newThreshold(email, limit, maturity)
+	err = addThreshold(threshold)
+	if err != nil {
+		return "", http.StatusInternalServerError, err
+	}
+
+	return "", http.StatusOK, nil
+}
+
+func alertRemoveHandler(r *http.Request, params httprouter.Params) (string, int, error) {
+	email := params.ByName("email")
+	// TODO: validate email
+	maturity := params.ByName("maturity")
+	if isValidMaturity(maturity) == false {
+		return "", http.StatusBadRequest, errUnknownMaturity
+	}
+	limit, err := strconv.ParseFloat(params.ByName("limit"), 64)
+	if err != nil {
+		return "", http.StatusBadRequest, errInvalidLimit
+	}
+
+	threshold := newThreshold(email, limit, maturity)
+	err = removeThreshold(threshold)
+	if err != nil {
+		return "", http.StatusInternalServerError, err
+	}
+
+	return "", http.StatusOK, nil
+}
+
+func alertListHandler(r *http.Request, params httprouter.Params) (string, int, error) {
+	email := params.ByName("email")
+	// TODO: validate email
+
+	thresholds := loadThresholds(email)
+
+	jsonData, err := json.Marshal(thresholds)
+	if err != nil {
+		return "", http.StatusInternalServerError, errMarshalError
+	}
+
+	return string(jsonData), http.StatusOK, nil
 }
