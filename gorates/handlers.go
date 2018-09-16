@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/mail"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ var (
 	errUnknownMaturity  = errors.New("unknown maturity")
 	errMarshalError     = errors.New("marhshal failed")
 	errInvalidYear      = errors.New("invalid year")
+	errInvalidEmail     = errors.New("invalid email address")
 	errInvalidLimit     = errors.New("invalid alert limit")
 	errOutOfRange       = errors.New("time is out of range")
 )
@@ -206,8 +208,10 @@ func webappHandler(r *http.Request, params httprouter.Params) (string, int, erro
 }
 
 func alertAddHandler(r *http.Request, params httprouter.Params) (string, int, error) {
-	email := params.ByName("email")
-	// TODO: validate email
+	email, err := mail.ParseAddress(params.ByName("email"))
+	if err != nil {
+		return "", http.StatusBadRequest, errInvalidEmail
+	}
 	maturity := params.ByName("maturity")
 	if isValidMaturity(maturity) == false {
 		return "", http.StatusBadRequest, errUnknownMaturity
@@ -217,7 +221,7 @@ func alertAddHandler(r *http.Request, params httprouter.Params) (string, int, er
 		return "", http.StatusBadRequest, errInvalidLimit
 	}
 
-	th := newThreshold(email, limit, maturity)
+	th := newThreshold(email.String(), limit, maturity)
 	err = th.Add()
 	if err != nil {
 		return "", http.StatusInternalServerError, err
@@ -227,8 +231,10 @@ func alertAddHandler(r *http.Request, params httprouter.Params) (string, int, er
 }
 
 func alertRemoveHandler(r *http.Request, params httprouter.Params) (string, int, error) {
-	email := params.ByName("email")
-	// TODO: validate email
+	email, err := mail.ParseAddress(params.ByName("email"))
+	if err != nil {
+		return "", http.StatusBadRequest, errInvalidEmail
+	}
 	maturity := params.ByName("maturity")
 	if isValidMaturity(maturity) == false {
 		return "", http.StatusBadRequest, errUnknownMaturity
@@ -238,7 +244,7 @@ func alertRemoveHandler(r *http.Request, params httprouter.Params) (string, int,
 		return "", http.StatusBadRequest, errInvalidLimit
 	}
 
-	th := newThreshold(email, limit, maturity)
+	th := newThreshold(email.String(), limit, maturity)
 	err = th.Remove()
 	if err != nil {
 		return "", http.StatusInternalServerError, err
@@ -248,10 +254,12 @@ func alertRemoveHandler(r *http.Request, params httprouter.Params) (string, int,
 }
 
 func alertListHandler(r *http.Request, params httprouter.Params) (string, int, error) {
-	email := params.ByName("email")
-	// TODO: validate email
+	email, err := mail.ParseAddress(params.ByName("email"))
+	if err != nil {
+		return "", http.StatusBadRequest, errInvalidEmail
+	}
 
-	thresholds := loadThresholds(email)
+	thresholds := loadThresholds(strings.Trim(email.String(), "<>"))
 
 	jsonData, err := json.Marshal(thresholds)
 	if err != nil {

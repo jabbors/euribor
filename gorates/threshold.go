@@ -56,7 +56,7 @@ func (t threshold) Alert() error {
 }
 
 func newThreshold(email string, limit float64, maturity string) threshold {
-	return threshold{Email: email, Limit: limit, Maturity: maturity}
+	return threshold{Email: strings.Trim(email, "<>"), Limit: limit, Maturity: maturity}
 }
 
 func newThresholdFromKeyVal(key string, value float64) (threshold, error) {
