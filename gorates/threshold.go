@@ -6,10 +6,10 @@ import (
 )
 
 type threshold struct {
-	Email    string
-	Limit    float64
-	Maturity string
-	Triggerd bool
+	Email    string  `json:"email"`
+	Limit    float64 `json:"limit"`
+	Maturity string  `json:"maturity"`
+	Triggerd bool    `json:"-"`
 }
 
 func (t threshold) Key() string {
