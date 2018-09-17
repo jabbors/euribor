@@ -15,9 +15,10 @@ const (
 )
 
 var (
-	version     string
-	webRoot     string
-	historyPath string
+	version         string
+	webRoot         string
+	historyPath     string
+	pushbulletToken string
 )
 
 func main() {
@@ -28,6 +29,7 @@ func main() {
 	flag.StringVar(&port, "port", "8080", "port to bind to")
 	flag.StringVar(&webRoot, "web-root", "", "root path if hosted behind a proxy")
 	flag.StringVar(&historyPath, "history-path", ".", "path to history rate CSV files")
+	flag.StringVar(&pushbulletToken, "pushbullet-token", "", "authorization token for pushbullet used when sending alerts")
 	flag.BoolVar(&verFlag, "version", false, "print version and exit")
 	flag.Parse()
 

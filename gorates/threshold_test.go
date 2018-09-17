@@ -48,17 +48,18 @@ func TestExceeded(t *testing.T) {
 		limit    float64
 		rates    []rate
 		exceeded bool
+		date     string
 	}{
-		{2.0, positiveSampleRates, false},
-		{1.5, positiveSampleRates, false},
-		{1.3, positiveSampleRates, false},
-		{1.2, positiveSampleRates, true},
-		{1.1, positiveSampleRates, true},
-		{-2.0, negativeSampleRates, true},
-		{-1.5, negativeSampleRates, true},
-		{-1.4, negativeSampleRates, true},
-		{-1.3, negativeSampleRates, false},
-		{-1.2, negativeSampleRates, false},
+		{2.0, positiveSampleRates, false, ""},
+		{1.5, positiveSampleRates, false, ""},
+		{1.3, positiveSampleRates, false, ""},
+		{1.2, positiveSampleRates, true, "2009-11-16"},
+		{1.1, positiveSampleRates, true, "2009-11-16"},
+		{-2.0, negativeSampleRates, true, "2009-12-16"},
+		{-1.5, negativeSampleRates, true, "2009-12-16"},
+		{-1.4, negativeSampleRates, true, "2009-12-16"},
+		{-1.3, negativeSampleRates, false, ""},
+		{-1.2, negativeSampleRates, false, ""},
 	}
 
 	for _, tc := range testCases {
@@ -67,5 +68,16 @@ func TestExceeded(t *testing.T) {
 		if exceeded != tc.exceeded {
 			t.Errorf("test case with limit %v and input %v failed, expected %t got %t", tc.limit, tc.rates, tc.exceeded, exceeded)
 		}
+		if exceeded && th.Date != tc.date {
+			t.Errorf("test case with limit %v and input %v failed, expected %s got %s", tc.limit, tc.rates, tc.date, th.Date)
+		}
 	}
 }
+
+// func TestAlert(t *testing.T) {
+// 	th := threshold{Email: "foo@bar.com", Limit: 42.0, Maturity: "1w", Date: "0 BC"}
+// 	err := th.Alert()
+// 	if err != nil {
+// 		t.Errorf("alerting failed with error: %v", err)
+// 	}
+// }

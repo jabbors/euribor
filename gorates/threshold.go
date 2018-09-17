@@ -1,8 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
+)
+
+const (
+	pushbulletURL = "https://api.pushbullet.com/v2/pushes"
 )
 
 type threshold struct {
@@ -10,6 +17,7 @@ type threshold struct {
 	Limit    float64 `json:"limit"`
 	Maturity string  `json:"maturity"`
 	Triggerd bool    `json:"-"`
+	Date     string  `json:"-"`
 }
 
 func (t threshold) Key() string {
@@ -36,7 +44,7 @@ func (t threshold) Remove() error {
 	return err
 }
 
-func (t threshold) Exceeded(rates []rate) bool {
+func (t *threshold) Exceeded(rates []rate) bool {
 	// we need at least 5 samples to determine a trend
 	if len(rates) < 5 {
 		return false
@@ -47,11 +55,46 @@ func (t threshold) Exceeded(rates []rate) bool {
 		}
 		return false
 	}
+
+	t.Date = rates[len(rates)-1].Date.Format("2006-01-02")
 	return true
 }
 
 func (t threshold) Alert() error {
-	// TODO: implement sending alert through pushbullet API
+	if pushbulletToken == "" {
+		return fmt.Errorf("pushbullet token not configured")
+	}
+
+	data := struct {
+		Type  string `json:"type"`
+		Title string `json:"title"`
+		Body  string `json:"body"`
+		Email string `json:"email"`
+	}{
+		"note",
+		fmt.Sprint("Automatic Euribor alert"),
+		fmt.Sprintf("Your defined limit '%.3f' for Euribor rate %s has been exceeded at %s", t.Limit, t.Maturity, t.Date),
+		t.Email,
+	}
+	jsonStr, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", pushbulletURL, bytes.NewBuffer(jsonStr))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", pushbulletToken))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("returned code %d, expected %d", resp.StatusCode, http.StatusOK)
+	}
+
 	return nil
 }
 
