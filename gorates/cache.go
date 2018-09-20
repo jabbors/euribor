@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	lastRefresh  time.Time
 	historyCache map[string][]rate
 	influxCache  map[string]map[string][]rate
 )
@@ -21,8 +20,20 @@ func refreshCache() {
 	historyCache = make(map[string][]rate)
 	influxCache = make(map[string]map[string][]rate)
 
+	var lastRefresh time.Time
+	var lastModified time.Time
 	for {
-		if time.Since(lastRefresh) < time.Hour*24 {
+		for _, maturity := range maturities {
+			filename := fmt.Sprintf("%s/euribor-rates-%s.csv", historyPath, maturity)
+			fi, err := os.Stat(filename)
+			if err != nil {
+				fmt.Println("[cache]: error get stat", err)
+			}
+			if fi.ModTime().After(lastModified) {
+				lastModified = fi.ModTime()
+			}
+		}
+		if !lastModified.After(lastRefresh) {
 			time.Sleep(time.Minute)
 			continue
 		}
@@ -30,7 +41,6 @@ func refreshCache() {
 		// refresh
 		log.Println("[cache]: refreshing history cache")
 		for _, maturity := range maturities {
-			// TODO: make path to files configureable
 			file := fmt.Sprintf("%s/euribor-rates-%s.csv", historyPath, maturity)
 			historyCache[maturity] = parseFile(file)
 		}
