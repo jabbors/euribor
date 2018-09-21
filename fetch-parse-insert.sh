@@ -14,7 +14,7 @@ fetch_page() {
     maturity=$1
     page="/euribor-rate-${maturity}.asp"
     file="/tmp/${page}"
-    url="http://www.euribor-rates.eu/${page}"
+    url="https://www.euribor-rates.eu/${page}"
     if [ ! -f ${file} ]
     then
         echo "fetching page ${url}"
