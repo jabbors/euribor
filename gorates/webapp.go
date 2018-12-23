@@ -93,12 +93,9 @@ window.onload=loadChart('3m', '3 months');
 <div>
 <select onChange="loadChart(this.options[this.selectedIndex].value, this.options[this.selectedIndex].text)">
 <option value="1w">1 week</option>
-<option value="2w">2 weeks</option>
 <option value="1m">1 month</option>
-<option value="2m">2 months</option>
 <option value="3m" selected>3 months</option>
 <option value="6m">6 months</option>
-<option value="9m">9 months</option>
 <option value="12m">12 months</option>
 </select>
 </div>

@@ -87,7 +87,8 @@ date_normalized() {
 rm -f /tmp/euribor*
 summaries=()
 # As of November 1st 2013 the number of Euribor rates was reduced to 8 (1-2 weeks, 1, 2, 3, 6, 9 and 12 months).
-for maturity in 1-week 2-weeks 1-month 2-months 3-months 6-months 9-months 12-months
+# As of December 1st 2018 the number of Euribor rates was reduced to 5 (1 week, 1, 3, 6, and 12 months).
+for maturity in 1-week 1-month 3-months 6-months 12-months
 do
     echo "processing maturity ${maturity}"
     fetch_page ${maturity}
