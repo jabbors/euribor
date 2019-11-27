@@ -12,9 +12,26 @@ notify_pushbullet() {
 
 fetch_page() {
     maturity=$1
-    page="/euribor-rate-${maturity}.asp"
+    case $maturity in
+        1-week)
+            number=5
+            ;;
+        1-month)
+            number=1
+            ;;
+        3-months)
+            number=2
+            ;;
+        6-months)
+            number=3
+            ;;
+        12-months)
+            number=4
+            ;;
+    esac
+    page="euribor-rate-${maturity}"
     file="/tmp/${page}"
-    url="https://www.euribor-rates.eu/${page}"
+    url="https://www.euribor-rates.eu/en/current-euribor-rates/$number/$page/"
     if [ ! -f ${file} ]
     then
         echo "fetching page ${url}"
@@ -24,16 +41,16 @@ fetch_page() {
 
 parse_date() {
     maturity=$1
-    page="/euribor-rate-${maturity}.asp"
+    page="euribor-rate-${maturity}"
     file="/tmp/${page}"
-    cat ${file} | grep "TABLE" -A 8 -m 1 | grep -o -e "[0-9]\{2\}-[0-9]\{2\}-[0-9]\{4\}"
+    cat ${file} | grep "By day" -A 8 | grep -o -e "[0-9]\{2\}/[0-9]\{2\}/[0-9]\{4\}" -m 1 | tr '/' '-'
 }
 
 parse_rate() {
     maturity=$1
-    page="/euribor-rate-${maturity}.asp"
+    page="euribor-rate-${maturity}"
     file="/tmp/${page}"
-    cat ${file} | grep "TABLE" -A 8 -m 1 | grep -o -e "-\?[0-9]\{1,2\}\.[0-9]\{3\}"
+    cat ${file} | grep "By day" -A 8 | grep -o -e "-\?[0-9]\{1,2\}\.[0-9]\{3\}" -m 1
 }
 
 last_inserted_time() {
