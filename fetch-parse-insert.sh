@@ -55,8 +55,8 @@ parse_rate() {
 
 last_inserted_time() {
     maturity=$(short_maturity_string $1)
-    ts=$(influx -format csv -execute "SELECT * FROM euribor.week.rates WHERE maturity='${maturity}' ORDER BY time DESC LIMIT 1" | tail -n 1 | cut -d ',' -f2)
-    date -d @$(( ts / 1000000000 )) +%m-%d-%Y
+    file="euribor-rates-${maturity}.csv"
+    tail -n1 ${file} | cut -d ',' -f 1
 }
 
 insert_data() {
