@@ -43,7 +43,8 @@ parse_date() {
     maturity=$1
     page="euribor-rate-${maturity}"
     file="/tmp/${page}"
-    cat ${file} | grep "By day" -A 8 | grep -o -e "[0-9]\{2\}/[0-9]\{2\}/[0-9]\{4\}" -m 1 | tr '/' '-'
+    parsed_date=$(cat ${file} | grep "By day" -A 8 | grep -o -e "[0-9]\{1,2\}/[0-9]\{1,2\}/[0-9]\{4\}" -m 1 | tr '/' '-')
+    date_normalized "$parsed_date"
 }
 
 parse_rate() {
@@ -71,7 +72,7 @@ insert_data() {
 
 populate_csv_files() {
     maturity=$(short_maturity_string $1)
-    date=$(date_normalized $2)
+    date=$2
     rate=$3
     dir=$(dirname $0)
     file="${dir}/euribor-rates-${maturity}.csv"
@@ -97,7 +98,9 @@ date_normalized() {
     date=$1
     year=$(echo ${date} | cut -d '-' -f3)
     month=$(echo ${date} | cut -d '-' -f1)
+    if [ ${#month} -eq 1 ]; then month="0$month"; fi;
     day=$(echo ${date} | cut -d '-' -f2)
+    if [ ${#day} -eq 1 ]; then day="0$day"; fi;
     echo "${year}-${month}-${day}"
 }
 
