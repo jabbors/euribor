@@ -5,20 +5,17 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 	"strconv"
 	"time"
 )
 
 var (
 	historyCache map[string][]rate
-	influxCache  map[string]map[string][]rate
 )
 
 // runs in go routine and takes care of refreshing the cache
 func refreshCache() {
 	historyCache = make(map[string][]rate)
-	influxCache = make(map[string]map[string][]rate)
 
 	var lastRefresh time.Time
 	var lastModified time.Time
@@ -43,28 +40,6 @@ func refreshCache() {
 		for _, maturity := range maturities {
 			file := fmt.Sprintf("%s/euribor-rates-%s.csv", historyPath, maturity)
 			historyCache[maturity] = parseFile(file)
-		}
-		log.Println("[cache]: refreshing influx cache")
-		for _, retention := range retentions {
-			results := queryInflux(retention)
-			cache := make(map[string][]rate)
-			// fmt.Println(results.Values)
-			// fmt.Println(reflect.TypeOf(results.Values).Kind())
-			for _, value := range results.Values {
-				// fmt.Println(value, reflect.TypeOf(value).Kind(), reflect.TypeOf(value))
-				m, r, err := transformInfluxValueToRate(reflect.ValueOf(value).Interface().([]interface{}))
-				if err != nil {
-					log.Println("[cache]: error converting influx value to rate")
-					continue
-				}
-				if rates, ok := cache[m]; ok {
-					rates = append(rates, r)
-					cache[m] = rates
-				} else {
-					cache[m] = []rate{r}
-				}
-			}
-			influxCache[retention] = cache
 		}
 		log.Println("[cache]: refresh completed")
 		go monitorRates()

@@ -131,31 +131,6 @@ func versionHandler(r *http.Request, _ httprouter.Params) (string, int, error) {
 	return versionMsg(version), http.StatusOK, nil
 }
 
-// influx handler
-func influxHandler(r *http.Request, params httprouter.Params) (string, int, error) {
-	retention := params.ByName("retention")
-	if isValidRetention(retention) == false {
-		return "", http.StatusBadRequest, errUnknownRetention
-	}
-
-	maturity := params.ByName("maturity")
-	if isValidMaturity(maturity) == false {
-		return "", http.StatusBadRequest, errUnknownMaturity
-	}
-
-	rates := []rate{}
-	for _, r := range influxCache[retentionMap[retention]][maturity] {
-		rates = append(rates, r)
-	}
-
-	jsonData, err := json.Marshal(rates)
-	if err != nil {
-		return "", http.StatusInternalServerError, errMarshalError
-	}
-
-	return string(jsonData), http.StatusOK, nil
-}
-
 // highstock handler
 func highstockHandler(r *http.Request, params httprouter.Params) (string, int, error) {
 	maturity := params.ByName("maturity")

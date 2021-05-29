@@ -49,7 +49,6 @@ func main() {
 	router.GET("/version", NoAuthHandler(versionHandler))
 
 	// routes to serve the app
-	router.GET("/rates/app/if/:retention/:maturity", NoAuthHandler(influxHandler))
 	router.GET("/rates/app/hs/:maturity", NoAuthHandler(highstockHandler))
 
 	// routes to serve historical queries
