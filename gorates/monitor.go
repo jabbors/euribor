@@ -9,12 +9,14 @@ import (
 type monitorService struct {
 	pushbulletToken string
 	monitorCh       <-chan bool
+	redisCon        *redisConnector
 }
 
-func NewMonitorService(pushbulletToken string, monitorCh <-chan bool) *monitorService {
+func NewMonitorService(pushbulletToken string, monitorCh <-chan bool, redisCon *redisConnector) *monitorService {
 	ms := monitorService{
 		pushbulletToken: pushbulletToken,
 		monitorCh:       monitorCh,
+		redisCon:        redisCon,
 	}
 
 	ms.start()
@@ -32,8 +34,13 @@ func (ms *monitorService) monitorRates() {
 		_ = <-ms.monitorCh
 
 		log.Println("[monitor]: loading thresholds from redis")
+		redisCli, err := ms.redisCon.Connect()
+		if err != nil {
+			log.Println("[monitor]: unable to connect to redis")
+			continue
+		}
 		filter := ""
-		thresholds := loadThresholds(filter)
+		thresholds := loadThresholds(redisCli, filter)
 
 		log.Println("[monitor]: processing thresholds...")
 		for _, th := range thresholds {
@@ -47,7 +54,7 @@ func (ms *monitorService) monitorRates() {
 					fmt.Printf("[monitor]: error: failed sending alert for threshold %s: %v\n", th.Key(), err)
 					continue
 				}
-				err = th.Remove()
+				err = th.Remove(redisCli)
 				if err != nil {
 					fmt.Printf("[monitor]: error: failed removing threshold %s: %v\n", th.Key(), err)
 				}

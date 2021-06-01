@@ -9,93 +9,64 @@ import (
 )
 
 const (
-	redisAddr = "localhost:6379"
 	retryConn = 5
 )
 
-var (
-	redisCli   *redis.Client
-	redisMutex = &sync.Mutex{}
-)
+// redisConnector represents a connection ta a redis DB
+type redisConnector struct {
+	host   string
+	port   int
+	client *redis.Client
+	mutex  *sync.Mutex
+}
 
-func getConnection() (*redis.Client, error) {
-	redisMutex.Lock()
-	defer redisMutex.Unlock()
+// NewRedisConnector returns an initialzed connector for a redis DB
+func NewRedisConnector(host string, port int) *redisConnector {
+	rc := redisConnector{
+		host:  host,
+		port:  port,
+		mutex: &sync.Mutex{},
+	}
+
+	return &rc
+}
+
+func (rc *redisConnector) Connect() (*redis.Client, error) {
+	rc.mutex.Lock()
+	defer rc.mutex.Unlock()
 
 	var err error
 	for i := 0; i < retryConn; i++ {
-		redisCli, err = checkConnection(redisCli)
+		err = rc.check()
 		if err == nil {
 			break
 		}
 		time.Sleep(time.Millisecond * 100) // sleep 0.1 seconds between retries
 	}
-	return redisCli, err
+	return rc.client, err
 }
 
-func checkConnection(cli *redis.Client) (*redis.Client, error) {
-	if cli == nil || cli.Ping().Err() != nil {
+func (rc *redisConnector) check() error {
+	if rc.client == nil || rc.client.Ping().Err() != nil {
 		// clean up the old connection
-		if cli != nil {
-			cli.Close()
+		if rc.client != nil {
+			rc.client.Close()
 		}
 
 		// open a new connection
+		redisAddr := fmt.Sprintf("%s:%d", rc.host, rc.port)
 		client := redis.NewClient(&redis.Options{Addr: redisAddr, DB: 0})
 
 		// check that the new connection works
 		err := client.Ping().Err()
 		if err != nil {
 			client.Close()
-			return nil, err
+			return err
 		}
+		rc.client = client
 
-		return client, nil
+		return nil
 	}
 
-	return cli, nil
-}
-
-func loadThresholds(email string) []threshold {
-	client, err := getConnection()
-	if err != nil {
-		fmt.Println("error: failed connecting to redis:", err)
-		return []threshold{}
-	}
-
-	keys, err := client.Keys("gorates_*").Result()
-	if err != nil {
-		fmt.Println("error: failed retrieving keys from redis:", err)
-		return []threshold{}
-	}
-
-	thresholds := []threshold{}
-	for _, key := range keys {
-		value, err := lookupValue(client, key)
-		if err != nil {
-			fmt.Printf("error: failed looking up value for key '%s': %v\n", key, err)
-			continue
-		}
-		threshold, err := newThresholdFromKeyVal(key, value)
-		if err != nil {
-			fmt.Printf("error: creating threshold from key '%s' and value '%v': %v\n", key, value, err)
-			continue
-		}
-		if email != "" {
-			if threshold.Email == email {
-				thresholds = append(thresholds, threshold)
-			}
-		} else {
-			thresholds = append(thresholds, threshold)
-		}
-	}
-	return thresholds
-}
-
-func lookupValue(client *redis.Client, key string) (float64, error) {
-	val, err := client.Get(key).Float64()
-	if err != nil {
-		return 0, err
-	}
-	return val, nil
+	return nil
 }

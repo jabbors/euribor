@@ -28,6 +28,8 @@ type appConfig struct {
 	WebRoot         string `default:"" split_words:"true" desc:"root path of hosted behind a proxy"`
 	DataPath        string `default:"." split_words:"true" desc:"path to data CSV files"`
 	PushpulletToken string `split_words:"true" desc:"authorization token for pushbullet used when sending alerts"`
+	RedisHost       string `default:"127.0.0.1" split_words:"true" desc:"address for redis database"`
+	RedisPort       int    `default:"6379" split_words:"true" desc:"port for redis database"`
 }
 
 // parse options from the environment. Return an error if parsing fails.
@@ -67,11 +69,18 @@ func main() {
 	config := &appConfig{}
 	config.parse()
 
+	// Setup redis connection
+	redisCon := NewRedisConnector(config.RedisHost, config.RedisPort)
+	_, err := redisCon.Connect()
+	if err != nil {
+		log.Fatal(fmt.Sprintf("unable to connect to redis on %s:%d %v", config.RedisHost, config.RedisPort, err))
+	}
+
 	monitorCh := make(chan bool)
 
-	_ = NewMonitorService(config.PushpulletToken, monitorCh)
+	_ = NewMonitorService(config.PushpulletToken, monitorCh, redisCon)
 	_ = NewCacheService(config.DataPath, monitorCh)
-	h := NewHandler(config.WebRoot)
+	h := NewHandler(config.WebRoot, redisCon)
 
 	router := httprouter.New()
 	router.RedirectTrailingSlash = true

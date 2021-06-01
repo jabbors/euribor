@@ -27,17 +27,20 @@ var (
 	errInvalidEmail     = errors.New("invalid email address")
 	errInvalidLimit     = errors.New("invalid alert limit")
 	errOutOfRange       = errors.New("time is out of range")
+	errRedisErr         = errors.New("connection to redis failed")
 )
 
 // handler serves up HTTP endpoints
 type handler struct {
-	webRoot string
+	webRoot  string
+	redisCon redisConnector
 }
 
 // NewHandler retuns an initialzed handler
-func NewHandler(webRoot string) *handler {
+func NewHandler(webRoot string, redisCon *redisConnector) *handler {
 	h := handler{
-		webRoot: webRoot,
+		webRoot:  webRoot,
+		redisCon: *redisCon,
 	}
 
 	return &h
@@ -210,8 +213,12 @@ func (h *handler) AlertAddHandler(r *http.Request, params httprouter.Params) (st
 		return "", http.StatusBadRequest, errInvalidLimit
 	}
 
+	redisCli, err := h.redisCon.Connect()
+	if err != nil {
+		return "", http.StatusInternalServerError, errRedisErr
+	}
 	th := newThreshold(email.String(), limit, maturity)
-	err = th.Add()
+	err = th.Add(redisCli)
 	if err != nil {
 		return "", http.StatusInternalServerError, err
 	}
@@ -233,8 +240,12 @@ func (h *handler) AlertRemoveHandler(r *http.Request, params httprouter.Params) 
 		return "", http.StatusBadRequest, errInvalidLimit
 	}
 
+	redisCli, err := h.redisCon.Connect()
+	if err != nil {
+		return "", http.StatusInternalServerError, errRedisErr
+	}
 	th := newThreshold(email.String(), limit, maturity)
-	err = th.Remove()
+	err = th.Remove(redisCli)
 	if err != nil {
 		return "", http.StatusInternalServerError, err
 	}
@@ -248,7 +259,12 @@ func (h *handler) AlertListHandler(r *http.Request, params httprouter.Params) (s
 		return "", http.StatusBadRequest, errInvalidEmail
 	}
 
-	thresholds := loadThresholds(strings.Trim(email.String(), "<>"))
+	redisCli, err := h.redisCon.Connect()
+	if err != nil {
+		return "", http.StatusInternalServerError, errRedisErr
+	}
+
+	thresholds := loadThresholds(redisCli, strings.Trim(email.String(), "<>"))
 
 	jsonData, err := json.Marshal(thresholds)
 	if err != nil {
