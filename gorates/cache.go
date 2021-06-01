@@ -13,15 +13,36 @@ var (
 	historyCache map[string][]rate
 )
 
+// cacheService takes care of caching and refreshing data
+type cacheService struct {
+	dataPath  string
+	monitorCh chan<- bool
+}
+
+// NewCacheService retuns an initialzed cacheService
+func NewCacheService(dataPath string, monitorCh chan<- bool) *cacheService {
+	cs := cacheService{
+		dataPath:  dataPath,
+		monitorCh: monitorCh,
+	}
+
+	cs.start()
+	return &cs
+}
+
+func (cs *cacheService) start() {
+	go cs.refreshCache()
+}
+
 // runs in go routine and takes care of refreshing the cache
-func refreshCache() {
+func (cs *cacheService) refreshCache() {
 	historyCache = make(map[string][]rate)
 
 	var lastRefresh time.Time
 	var lastModified time.Time
 	for {
 		for _, maturity := range maturities {
-			filename := fmt.Sprintf("%s/euribor-rates-%s.csv", historyPath, maturity)
+			filename := fmt.Sprintf("%s/euribor-rates-%s.csv", cs.dataPath, maturity)
 			fi, err := os.Stat(filename)
 			if err != nil {
 				fmt.Println("[cache]: error get stat", err)
@@ -38,11 +59,13 @@ func refreshCache() {
 		// refresh
 		log.Println("[cache]: refreshing history cache")
 		for _, maturity := range maturities {
-			file := fmt.Sprintf("%s/euribor-rates-%s.csv", historyPath, maturity)
+			file := fmt.Sprintf("%s/euribor-rates-%s.csv", cs.dataPath, maturity)
 			historyCache[maturity] = parseFile(file)
 		}
 		log.Println("[cache]: refresh completed")
-		go monitorRates()
+
+		log.Println("[cache]: signal monitor service to check rates")
+		cs.monitorCh <- true
 
 		lastRefresh = time.Now()
 	}

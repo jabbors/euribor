@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/kelseyhightower/envconfig"
 )
 
 const (
@@ -15,53 +18,83 @@ const (
 )
 
 var (
-	version         string
-	webRoot         string
-	historyPath     string
-	pushbulletToken string
+	version string
 )
 
-func main() {
-	var host string
-	var port string
+// appConfig represents the configuration.
+type appConfig struct {
+	Host            string `default:"0.0.0.0" desc:"host to bind to"`
+	Port            int    `default:"8080" desc:"port to bind to"`
+	WebRoot         string `default:"" split_words:"true" desc:"root path of hosted behind a proxy"`
+	DataPath        string `default:"." split_words:"true" desc:"path to data CSV files"`
+	PushpulletToken string `split_words:"true" desc:"authorization token for pushbullet used when sending alerts"`
+}
+
+// parse options from the environment. Return an error if parsing fails.
+func (a *appConfig) parse() {
+	defaultUsage := flag.Usage
+	flag.Usage = func() {
+		// Show default usage for the app (lists flags, etc).
+		defaultUsage()
+		fmt.Fprint(os.Stderr, "\n")
+
+		err := envconfig.Usage("", a)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %s\n\n", err.Error())
+			os.Exit(1)
+		}
+	}
+
 	var verFlag bool
-	flag.StringVar(&host, "host", "localhost", "host to bind to")
-	flag.StringVar(&port, "port", "8080", "port to bind to")
-	flag.StringVar(&webRoot, "web-root", "", "root path if hosted behind a proxy")
-	flag.StringVar(&historyPath, "history-path", ".", "path to history rate CSV files")
-	flag.StringVar(&pushbulletToken, "pushbullet-token", "", "authorization token for pushbullet used when sending alerts")
 	flag.BoolVar(&verFlag, "version", false, "print version and exit")
 	flag.Parse()
 
+	// Print version and exit if -version flag is passed.
 	if verFlag {
 		fmt.Printf("gorates: version=%s\n", version)
-		return
+		os.Exit(0)
 	}
 
-	go refreshCache()
+	err := envconfig.Process("", a)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s\n\n", err.Error())
+		flag.Usage()
+		os.Exit(1)
+	}
+}
+
+func main() {
+	config := &appConfig{}
+	config.parse()
+
+	monitorCh := make(chan bool)
+
+	_ = NewMonitorService(config.PushpulletToken, monitorCh)
+	_ = NewCacheService(config.DataPath, monitorCh)
+	h := NewHandler(config.WebRoot)
 
 	router := httprouter.New()
 	router.RedirectTrailingSlash = true
 
 	// routes for general info
 	// TODO: add routes for list of supported retentions/maturities
-	router.GET("/", NoAuthHandler(indexHandler))
-	router.GET("/version", NoAuthHandler(versionHandler))
+	router.GET("/", NoAuthHandler(h.IndexHandler))
+	router.GET("/version", NoAuthHandler(h.VersionHandler))
 
 	// routes to serve the app
-	router.GET("/rates/app/hs/:maturity", NoAuthHandler(highstockHandler))
+	router.GET("/rates/app/hs/:maturity", NoAuthHandler(h.HighstockHandler))
 
 	// routes to serve historical queries
-	router.GET("/rates/history/:year/:maturity", NoAuthHandler(historyHandler))
+	router.GET("/rates/history/:year/:maturity", NoAuthHandler(h.HistoryHandler))
 
 	// routes to serve the webapp
-	router.GET("/webapp", NoAuthHandler(webappHandler))
+	router.GET("/webapp", NoAuthHandler(h.WebappHandler))
 
 	// routes to manage alerts
-	router.PUT("/alert/:email/:maturity/:limit", NoAuthHandler(alertAddHandler))
-	router.DELETE("/alert/:email/:maturity/:limit", NoAuthHandler(alertRemoveHandler))
-	router.GET("/alert/:email", NoAuthHandler(alertListHandler))
+	router.PUT("/alert/:email/:maturity/:limit", NoAuthHandler(h.AlertAddHandler))
+	router.DELETE("/alert/:email/:maturity/:limit", NoAuthHandler(h.AlertRemoveHandler))
+	router.GET("/alert/:email", NoAuthHandler(h.AlertListHandler))
 
-	log.Printf("listening on %s:%s", host, port)
-	log.Fatal(http.ListenAndServe(host+":"+port, router))
+	log.Printf("listening on %s:%d", config.Host, config.Port)
+	log.Fatal(http.ListenAndServe(config.Host+":"+strconv.Itoa(config.Port), router))
 }

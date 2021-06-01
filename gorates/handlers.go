@@ -29,6 +29,20 @@ var (
 	errOutOfRange       = errors.New("time is out of range")
 )
 
+// handler serves up HTTP endpoints
+type handler struct {
+	webRoot string
+}
+
+// NewHandler retuns an initialzed handler
+func NewHandler(webRoot string) *handler {
+	h := handler{
+		webRoot: webRoot,
+	}
+
+	return &h
+}
+
 func sourceIP(r *http.Request) string {
 	var ip string
 	header := r.Header.Get("X-Forwarded-For")
@@ -122,17 +136,17 @@ func versionMsg(msg string) string {
 }
 
 // index handler
-func indexHandler(r *http.Request, _ httprouter.Params) (string, int, error) {
+func (h *handler) IndexHandler(r *http.Request, _ httprouter.Params) (string, int, error) {
 	return "Welcome to the Euribor rates service!", http.StatusOK, nil
 }
 
 // version handler
-func versionHandler(r *http.Request, _ httprouter.Params) (string, int, error) {
+func (h *handler) VersionHandler(r *http.Request, _ httprouter.Params) (string, int, error) {
 	return versionMsg(version), http.StatusOK, nil
 }
 
 // highstock handler
-func highstockHandler(r *http.Request, params httprouter.Params) (string, int, error) {
+func (h *handler) HighstockHandler(r *http.Request, params httprouter.Params) (string, int, error) {
 	maturity := params.ByName("maturity")
 	if isValidMaturity(maturity) == false {
 		return "", http.StatusBadRequest, errUnknownMaturity
@@ -147,7 +161,7 @@ func highstockHandler(r *http.Request, params httprouter.Params) (string, int, e
 }
 
 // history handler
-func historyHandler(r *http.Request, params httprouter.Params) (string, int, error) {
+func (h *handler) HistoryHandler(r *http.Request, params httprouter.Params) (string, int, error) {
 	year, err := strconv.ParseInt(params.ByName("year"), 10, 32)
 	if err != nil {
 		return "", http.StatusBadRequest, errInvalidYear
@@ -178,11 +192,11 @@ func historyHandler(r *http.Request, params httprouter.Params) (string, int, err
 }
 
 // webapp handler
-func webappHandler(r *http.Request, params httprouter.Params) (string, int, error) {
-	return renderWebapp(webRoot), http.StatusOK, nil
+func (h *handler) WebappHandler(r *http.Request, params httprouter.Params) (string, int, error) {
+	return renderWebapp(h.webRoot), http.StatusOK, nil
 }
 
-func alertAddHandler(r *http.Request, params httprouter.Params) (string, int, error) {
+func (h *handler) AlertAddHandler(r *http.Request, params httprouter.Params) (string, int, error) {
 	email, err := mail.ParseAddress(params.ByName("email"))
 	if err != nil {
 		return "", http.StatusBadRequest, errInvalidEmail
@@ -205,7 +219,7 @@ func alertAddHandler(r *http.Request, params httprouter.Params) (string, int, er
 	return "", http.StatusOK, nil
 }
 
-func alertRemoveHandler(r *http.Request, params httprouter.Params) (string, int, error) {
+func (h *handler) AlertRemoveHandler(r *http.Request, params httprouter.Params) (string, int, error) {
 	email, err := mail.ParseAddress(params.ByName("email"))
 	if err != nil {
 		return "", http.StatusBadRequest, errInvalidEmail
@@ -228,7 +242,7 @@ func alertRemoveHandler(r *http.Request, params httprouter.Params) (string, int,
 	return "", http.StatusOK, nil
 }
 
-func alertListHandler(r *http.Request, params httprouter.Params) (string, int, error) {
+func (h *handler) AlertListHandler(r *http.Request, params httprouter.Params) (string, int, error) {
 	email, err := mail.ParseAddress(params.ByName("email"))
 	if err != nil {
 		return "", http.StatusBadRequest, errInvalidEmail

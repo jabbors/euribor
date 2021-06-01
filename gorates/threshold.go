@@ -60,7 +60,7 @@ func (t *threshold) Exceeded(rates []rate) bool {
 	return true
 }
 
-func (t threshold) Alert() error {
+func (t threshold) Alert(pushbulletToken string) error {
 	if pushbulletToken == "" {
 		return fmt.Errorf("pushbullet token not configured")
 	}
