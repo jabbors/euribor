@@ -1,6 +1,7 @@
 #!/bin/bash
 
-PUSHBULLET_TOKEN=""
+PUSHBULLET_TOKEN=${PUSHBULLET_TOKEN:-}
+DATA_PATH=${DATA_PATH:-.}
 notify_pushbullet() {
     title=$1
     body=$2
@@ -56,7 +57,7 @@ parse_rate() {
 
 last_inserted_time() {
     maturity=$(short_maturity_string $1)
-    file="euribor-rates-${maturity}.csv"
+    file="${DATA_PATH}/euribor-rates-${maturity}.csv"
     tail -n1 ${file} | cut -d ',' -f 1
 }
 
@@ -64,8 +65,7 @@ populate_csv_files() {
     maturity=$(short_maturity_string $1)
     date=$2
     rate=$3
-    dir=$(dirname $0)
-    file="${dir}/euribor-rates-${maturity}.csv"
+    file="${DATA_PATH}/euribor-rates-${maturity}.csv"
     echo "append line' ${date},${rate}' to ${file}"
     echo "${date},${rate}" >> ${file}
 }
@@ -113,7 +113,7 @@ do
 done
 
 now=$(date -R)
-yesterday=$(date --date="yesterday" +%Y-%m-%d)
-title="gorates pull at ${now} for ${yesterday}"
+last_inserted=$(last_inserted_time 1w)
+title="gorates pull at ${now} for ${last_inserted}"
 summary=$(IFS=: eval 'echo "${summaries[*]}"' | sed "s/:/\\\n/g")
 notify_pushbullet "$title" "$summary"
