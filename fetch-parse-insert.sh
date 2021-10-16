@@ -1,13 +1,14 @@
 #!/bin/bash
 
-PUSHBULLET_TOKEN=${PUSHBULLET_TOKEN:-}
+PUSHOVER_APP_TOKEN=${PUSHOVER_APP_TOKEN:-}
+PUSHOVER_USER_KEY=${PUSHOVER_USER_KEY:-}
 DATA_PATH=${DATA_PATH:-.}
-notify_pushbullet() {
+notify_pushover() {
     title=$1
     body=$2
-    if [ -n "$PUSHBULLET_TOKEN" ]
+    if [ -n "$PUSHOVER_APP_TOKEN" ] && [ -n "$PUSHOVER_USER_KEY" ]
     then
-        curl --header "Authorization: Bearer ${PUSHBULLET_TOKEN}" -X POST https://api.pushbullet.com/v2/pushes --header "Content-Type: application/json" --data-binary "{\"type\": \"note\", \"title\": \"${title}\", \"body\": \"${body}\"}"
+        curl -s --form-string "token=$PUSHOVER_APP_TOKEN" --form-string "user=$PUSHOVER_USER_KEY" --form-string "title=$title" --form-string "message=$body" https://api.pushover.net/1/messages.json
     fi
 }
 
@@ -115,5 +116,5 @@ done
 now=$(date -R)
 last_inserted=$(last_inserted_time 1w)
 title="gorates pull at ${now} for ${last_inserted}"
-summary=$(IFS=: eval 'echo "${summaries[*]}"' | sed "s/:/\\\n/g")
-notify_pushbullet "$title" "$summary"
+summary=$(IFS=$'\n' eval 'echo "${summaries[*]}"')
+notify_pushover "$title" "$summary"
