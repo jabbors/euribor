@@ -23,13 +23,13 @@ var (
 
 // appConfig represents the configuration.
 type appConfig struct {
-	Host            string `default:"0.0.0.0" desc:"host to bind to"`
-	Port            int    `default:"8080" desc:"port to bind to"`
-	WebRoot         string `default:"" split_words:"true" desc:"root path of hosted behind a proxy"`
-	DataPath        string `default:"." split_words:"true" desc:"path to data CSV files"`
-	PushpulletToken string `split_words:"true" desc:"authorization token for pushbullet used when sending alerts"`
-	RedisHost       string `default:"127.0.0.1" split_words:"true" desc:"address for redis database"`
-	RedisPort       int    `default:"6379" split_words:"true" desc:"port for redis database"`
+	Host             string `default:"0.0.0.0" desc:"host to bind to"`
+	Port             int    `default:"8080" desc:"port to bind to"`
+	WebRoot          string `default:"" split_words:"true" desc:"root path of hosted behind a proxy"`
+	DataPath         string `default:"." split_words:"true" desc:"path to data CSV files"`
+	PushoverAppToken string `split_words:"true" desc:"app token for pushover used when sending alerts"`
+	RedisHost        string `default:"127.0.0.1" split_words:"true" desc:"address for redis database"`
+	RedisPort        int    `default:"6379" split_words:"true" desc:"port for redis database"`
 }
 
 // parse options from the environment. Return an error if parsing fails.
@@ -78,7 +78,7 @@ func main() {
 
 	monitorCh := make(chan bool)
 
-	_ = NewMonitorService(config.PushpulletToken, monitorCh, redisCon)
+	_ = NewMonitorService(config.PushoverAppToken, monitorCh, redisCon)
 	_ = NewCacheService(config.DataPath, monitorCh)
 	h := NewHandler(config.WebRoot, redisCon)
 

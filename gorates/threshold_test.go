@@ -6,19 +6,19 @@ import (
 )
 
 func TestKey(t *testing.T) {
-	th := threshold{Email: "foo@bar.com", Maturity: "1w"}
-	if th.Key() != "gorates_foo@bar.com;1w" {
-		t.Errorf("expected gorates_foo@bar.com;1w, got %s", th.Key())
+	th := threshold{UserToken: "xzyabc", Maturity: "1w"}
+	if th.Key() != "gorates_xzyabc;1w" {
+		t.Errorf("expected gorates_xzyabc;1w, got %s", th.Key())
 	}
 }
 
 func TestNewThresholdFromKeyVal(t *testing.T) {
-	th, err := newThresholdFromKeyVal("gorates_foo@bar.com;1w", 1.0)
+	th, err := newThresholdFromKeyVal("gorates_xzyabc;1w", 1.0)
 	if err != nil {
 		t.Errorf("did not expect a failure from valid input")
 	}
-	if th.Email != "foo@bar.com" {
-		t.Errorf("expected foo@bar.com, got %s", th.Email)
+	if th.UserToken != "xzyabc" {
+		t.Errorf("expected xzyabc, got %s", th.UserToken)
 	}
 	if th.Maturity != "1w" {
 		t.Errorf("expected 1w, got %s", th.Maturity)
@@ -75,8 +75,8 @@ func TestExceeded(t *testing.T) {
 }
 
 // func TestAlert(t *testing.T) {
-// 	th := threshold{Email: "foo@bar.com", Limit: 42.0, Maturity: "1w", Date: "0 BC"}
-// 	err := th.Alert()
+// 	th := threshold{UserToken: "xzyabc", Limit: 42.0, Maturity: "1w", Date: "0 BC"}
+// 	err := th.Alert("123zxy")
 // 	if err != nil {
 // 		t.Errorf("alerting failed with error: %v", err)
 // 	}

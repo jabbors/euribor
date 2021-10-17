@@ -7,16 +7,16 @@ import (
 
 // monitorService watches rates and sends out alerts when thresholds are exceeded
 type monitorService struct {
-	pushbulletToken string
-	monitorCh       <-chan bool
-	redisCon        *redisConnector
+	pushoverAppToken string
+	monitorCh        <-chan bool
+	redisCon         *redisConnector
 }
 
-func NewMonitorService(pushbulletToken string, monitorCh <-chan bool, redisCon *redisConnector) *monitorService {
+func NewMonitorService(pushoverAppToken string, monitorCh <-chan bool, redisCon *redisConnector) *monitorService {
 	ms := monitorService{
-		pushbulletToken: pushbulletToken,
-		monitorCh:       monitorCh,
-		redisCon:        redisCon,
+		pushoverAppToken: pushoverAppToken,
+		monitorCh:        monitorCh,
+		redisCon:         redisCon,
 	}
 
 	ms.start()
@@ -49,7 +49,7 @@ func (ms *monitorService) monitorRates() {
 			}
 
 			if th.Exceeded(historyCache[th.Maturity]) {
-				err := th.Alert(ms.pushbulletToken)
+				err := th.Alert(ms.pushoverAppToken)
 				if err != nil {
 					fmt.Printf("[monitor]: error: failed sending alert for threshold %s: %v\n", th.Key(), err)
 					continue

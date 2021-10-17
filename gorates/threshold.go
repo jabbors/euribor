@@ -1,29 +1,23 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 
+	"github.com/gregdel/pushover"
 	redis "gopkg.in/redis.v5"
 )
 
-const (
-	pushbulletURL = "https://api.pushbullet.com/v2/pushes"
-)
-
 type threshold struct {
-	Email    string  `json:"email"`
-	Limit    float64 `json:"limit"`
-	Maturity string  `json:"maturity"`
-	Triggerd bool    `json:"-"`
-	Date     string  `json:"-"`
+	UserToken string  `json:"user_token"`
+	Limit     float64 `json:"limit"`
+	Maturity  string  `json:"maturity"`
+	Triggerd  bool    `json:"-"`
+	Date      string  `json:"-"`
 }
 
 func (t threshold) Key() string {
-	return fmt.Sprintf("gorates_%s;%s", t.Email, t.Maturity)
+	return fmt.Sprintf("gorates_%s;%s", t.UserToken, t.Maturity)
 }
 
 func (t threshold) Add(client *redis.Client) error {
@@ -52,59 +46,40 @@ func (t *threshold) Exceeded(rates []rate) bool {
 	return true
 }
 
-func (t threshold) Alert(pushbulletToken string) error {
-	if pushbulletToken == "" {
-		return fmt.Errorf("pushbullet token not configured")
+func (t threshold) Alert(pushoverAppToken string) error {
+	if pushoverAppToken == "" {
+		return fmt.Errorf("pushover app token not configured")
 	}
 
-	data := struct {
-		Type  string `json:"type"`
-		Title string `json:"title"`
-		Body  string `json:"body"`
-		Email string `json:"email"`
-	}{
-		"note",
-		fmt.Sprint("Automatic Euribor alert"),
-		fmt.Sprintf("Your defined limit '%.3f' for Euribor rate %s has been exceeded at %s", t.Limit, t.Maturity, t.Date),
-		t.Email,
-	}
-	jsonStr, err := json.Marshal(data)
+	app := pushover.New(pushoverAppToken)
+	recipient := pushover.NewRecipient(t.UserToken)
+	title := "Automatic Euribor alert"
+	body := fmt.Sprintf("Your defined limit '%.3f' for Euribor rate %s has been exceeded at %s", t.Limit, t.Maturity, t.Date)
+	message := pushover.NewMessageWithTitle(body, title)
+	_, err := app.SendMessage(message, recipient)
 	if err != nil {
 		return err
-	}
-
-	req, err := http.NewRequest("POST", pushbulletURL, bytes.NewBuffer(jsonStr))
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", pushbulletToken))
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("returned code %d, expected %d", resp.StatusCode, http.StatusOK)
 	}
 
 	return nil
 }
 
-func newThreshold(email string, limit float64, maturity string) threshold {
-	return threshold{Email: strings.Trim(email, "<>"), Limit: limit, Maturity: maturity}
+func newThreshold(userToken string, limit float64, maturity string) threshold {
+	return threshold{UserToken: userToken, Limit: limit, Maturity: maturity}
 }
 
 func newThresholdFromKeyVal(key string, value float64) (threshold, error) {
 	key = strings.TrimLeft(key, "gorates_")
+	fmt.Println(key)
 	parts := strings.Split(key, ";")
 	if len(parts) != 2 {
-		return threshold{}, fmt.Errorf("email and maturity not found in key")
+		return threshold{}, fmt.Errorf("user_token and maturity not found in key")
 	}
 
-	return threshold{Email: parts[0], Maturity: parts[1], Limit: value}, nil
+	return threshold{UserToken: parts[0], Maturity: parts[1], Limit: value}, nil
 }
 
-func loadThresholds(client *redis.Client, email string) []threshold {
+func loadThresholds(client *redis.Client, userToken string) []threshold {
 	keys, err := client.Keys("gorates_*").Result()
 	if err != nil {
 		fmt.Println("error: failed retrieving keys from redis:", err)
@@ -123,8 +98,8 @@ func loadThresholds(client *redis.Client, email string) []threshold {
 			fmt.Printf("error: creating threshold from key '%s' and value '%v': %v\n", key, value, err)
 			continue
 		}
-		if email != "" {
-			if threshold.Email == email {
+		if userToken != "" {
+			if threshold.UserToken == userToken {
 				thresholds = append(thresholds, threshold)
 			}
 		} else {
