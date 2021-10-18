@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/mail"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +24,7 @@ var (
 	errUnknownMaturity  = errors.New("unknown maturity")
 	errMarshalError     = errors.New("marhshal failed")
 	errInvalidYear      = errors.New("invalid year")
-	errInvalidEmail     = errors.New("invalid email address")
+	errInvalidUserToken = errors.New("invalid user token")
 	errInvalidLimit     = errors.New("invalid alert limit")
 	errOutOfRange       = errors.New("time is out of range")
 	errRedisErr         = errors.New("connection to redis failed")
@@ -199,10 +199,23 @@ func (h *handler) WebappHandler(r *http.Request, params httprouter.Params) (stri
 	return renderWebapp(h.webRoot), http.StatusOK, nil
 }
 
+func isValidUserToken(token string) bool {
+	if token == "" {
+		return false
+	}
+
+	tokenRegexp := regexp.MustCompile(`^[A-Za-z0-9]{30}$`)
+	if !tokenRegexp.MatchString(token) {
+		return false
+	}
+
+	return true
+}
+
 func (h *handler) AlertAddHandler(r *http.Request, params httprouter.Params) (string, int, error) {
-	email, err := mail.ParseAddress(params.ByName("email"))
-	if err != nil {
-		return "", http.StatusBadRequest, errInvalidEmail
+	userToken := params.ByName("email")
+	if isValidUserToken(userToken) == false {
+		return "", http.StatusBadRequest, errInvalidUserToken
 	}
 	maturity := params.ByName("maturity")
 	if isValidMaturity(maturity) == false {
@@ -217,7 +230,7 @@ func (h *handler) AlertAddHandler(r *http.Request, params httprouter.Params) (st
 	if err != nil {
 		return "", http.StatusInternalServerError, errRedisErr
 	}
-	th := newThreshold(email.String(), limit, maturity)
+	th := newThreshold(userToken, limit, maturity)
 	err = th.Add(redisCli)
 	if err != nil {
 		return "", http.StatusInternalServerError, err
@@ -227,9 +240,9 @@ func (h *handler) AlertAddHandler(r *http.Request, params httprouter.Params) (st
 }
 
 func (h *handler) AlertRemoveHandler(r *http.Request, params httprouter.Params) (string, int, error) {
-	email, err := mail.ParseAddress(params.ByName("email"))
-	if err != nil {
-		return "", http.StatusBadRequest, errInvalidEmail
+	userToken := params.ByName("email")
+	if isValidUserToken(userToken) == false {
+		return "", http.StatusBadRequest, errInvalidUserToken
 	}
 	maturity := params.ByName("maturity")
 	if isValidMaturity(maturity) == false {
@@ -244,7 +257,7 @@ func (h *handler) AlertRemoveHandler(r *http.Request, params httprouter.Params) 
 	if err != nil {
 		return "", http.StatusInternalServerError, errRedisErr
 	}
-	th := newThreshold(email.String(), limit, maturity)
+	th := newThreshold(userToken, limit, maturity)
 	err = th.Remove(redisCli)
 	if err != nil {
 		return "", http.StatusInternalServerError, err
@@ -254,9 +267,9 @@ func (h *handler) AlertRemoveHandler(r *http.Request, params httprouter.Params) 
 }
 
 func (h *handler) AlertListHandler(r *http.Request, params httprouter.Params) (string, int, error) {
-	email, err := mail.ParseAddress(params.ByName("email"))
-	if err != nil {
-		return "", http.StatusBadRequest, errInvalidEmail
+	userToken := params.ByName("email")
+	if isValidUserToken(userToken) == false {
+		return "", http.StatusBadRequest, errInvalidUserToken
 	}
 
 	redisCli, err := h.redisCon.Connect()
@@ -264,7 +277,7 @@ func (h *handler) AlertListHandler(r *http.Request, params httprouter.Params) (s
 		return "", http.StatusInternalServerError, errRedisErr
 	}
 
-	thresholds := loadThresholds(redisCli, strings.Trim(email.String(), "<>"))
+	thresholds := loadThresholds(redisCli, userToken)
 
 	jsonData, err := json.Marshal(thresholds)
 	if err != nil {
