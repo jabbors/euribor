@@ -1,9 +1,7 @@
-[![Build Status](https://travis-ci.org/jabbors/euribor.svg?branch=master)](https://travis-ci.org/jabbors/euribor)
-
 # euribor
 
-This is the home for my backend and frontend serving euribor rates in a mobile friendly web page.
+A mobile friendly webapp replacing the defunct iOS app http://www.euriborsapp.com which stopped working early summer 2016. The app lets the user follow the trends for the Euribor reference rates.
 
-The aim is to create service that will replace the now defunct iOS app http://www.euriborsapp.com which stopped working early summer 2016.
+Data is taken from https://www.euribor-rates.eu/en/ and stored in this repository. It is updated once a day around 15:00 EEST.
 
-When the backend API and the frontend (not yet existing) is ready, I intend to make the service public.
+App is available at https://jabbors.github.io/euribor/
