@@ -21,7 +21,7 @@
 <body>
 <script>
 function loadChart(maturity, name) {
-	$.get('https://raw.githubusercontent.com/jabbors/euribor/refs/heads/master/euribor-rates-'+maturity+'.csv', function (csv) {
+	$.get('https://raw.githubusercontent.com/jabbors/euribor-rates/refs/heads/master/rate-'+maturity+'.csv', function (csv) {
 
         const data = csv
             .trim()
